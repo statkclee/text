@@ -1,10 +1,10 @@
 ---
 layout: page
-title: xwMOOC 기계학습
+title: xwMOOC 자연어 처리 - 텍스트
 subtitle: 저녁이 있는 삶 -- 손학규
 output:
   html_document: 
-    keep_md: yes
+    toc: yes
   pdf_document:
     latex_engine: xelatex
 mainfont: NanumGothic
@@ -18,6 +18,8 @@ mainfont: NanumGothic
 
 ``` {r, include=FALSE}
 source("tools/chunk-options.R")
+knitr::opts_knit$set(verbose = FALSE, echo=FALSE, message=FALSE, warning =FALSE)
+
 library(rJava)
 library(KoNLP)
 library(tidyverse)
@@ -30,7 +32,7 @@ theme_set(theme_gray(base_family='NanumGothic'))
 
 ```
 
-## 책 데이터 분석 작업흐름
+## 1. 책 데이터 분석 작업흐름 {#hq-book-workflow}
 
 텍스트 책 데이터를 분석하는 과정은 영문 텍스트를 분석하는 것과 크게 다르지 않는다.
 
@@ -57,7 +59,7 @@ library(stringr)
 library(wordcloud2)
 ```
 
-## `KoNLP` 팩키지
+## 2. `KoNLP` 팩키지 {#hq-konlp}
 
 최근 [KoNLP](https://cran.r-project.org/web/packages/KoNLP/index.html) 팩키지가 버젼업되면서 기존 36만개 형태소가 120만개 형태소 사전을 갖게 되어 더욱 강력한 
 텍스트 분석이 가능해졌다.
@@ -68,7 +70,7 @@ library(wordcloud2)
 useNIADic(which_dic = c("woorimalsam", "insighter"), category_dic_nms = "political", backup = T)
 ```
 
-## 저녁이 있는 삶 
+## 3. 저녁이 있는 삶  {#hq-evening-with-life}
 
 [저녁이 있는 삶 - 손학규의 민생경제론](https://www.kyobobook.co.kr/product/detailViewKor.laf?mallGb=KOR&ejkGb=KOR&barcode=9788992792318&orderClick=JAj)은 
 [손학규](http://www.hq.or.kr/main/) 전 민주당 대표가 2012년 대선을 준비하면서 펴낸 책으로 김종인 민주당 의원 
@@ -123,7 +125,7 @@ wordcloud(words = names(wordFreq), freq = wordFreq, min.freq = 20, random.order 
           rot.per = 0.1, colors = pal, family="NanumGothic")
 ```
 
-## 저녁이 있는 삶 - 형태소 분석
+## 4. 저녁이 있는 삶 - 형태소 분석 {#hq-evening-with-life-words}
 
 형태소 분석기를 사용하는 과정은 적절한 형태소 분석기를 활용하여 한국어를 분석할 경우 유용하다.
 몇가지 형태소 분석기가 존재하지만, 한국어의 복잡성으로 인해 그다지 만족스러운 결과를 가져다 주지 않고 있다.
@@ -175,7 +177,7 @@ wordcloud(words = names(wordFreq), freq = wordFreq, min.freq = 7, random.order =
           rot.per = 0.1, colors = pal, family="NanumGothic")
 ```
 
-## 단어구름을 이미지와 결합
+## 5. 단어구름을 이미지와 결합 {#hq-evening-with-life-wordcloud}
 
 [‘저녁이 있는 삶’ 손학규 17일 국민의당 입당](http://sports.khan.co.kr/news/sk_index.html?art_id=201702161434003&amp;sec_id=560901) 기사에 영감을 받아
 국민의당 로고에 "저녁이 있는 삶" 단어를 넣으면 시각화로도 의미가 있어 보인다.
