@@ -1,11 +1,10 @@
 ---
 layout: page
-title: xwMOOC 기계학습
+title: xwMOOC 자연어 처리 - 텍스트
 subtitle: 영화 평점 - 무비렌즈(MovieLens)
 output:
   html_document: 
     toc: yes
-    keep_md: yes
   pdf_document:
     latex_engine: xelatex
 mainfont: NanumGothic
@@ -44,7 +43,7 @@ dataset_zip <- paste0(dataset, archive_type)
 
 ```
 
-## 1. 영화 
+## 1. 영화 {#nlp-movielens}
 
 누구나 관심을 갖는 것이 영화다. 누구나 영화에 대한 추억, 회상, 시원함, 애틋한 감정 등이 있을것이다.
 물론 해외 영화지만 가장 좋은 평점을 받은 데이터는 어떤 것인지 살펴보는 것도 큰 의미가 있을 듯하다.
@@ -57,9 +56,9 @@ dataset_zip <- paste0(dataset, archive_type)
 
 - [ggplot2movies: Movies Data](https://cran.r-project.org/web/packages/ggplot2movies/)
 
-## 2. 영화 데이터 분석
+## 2. 영화 데이터 분석 {#nlp-movielens-data-analysis}
 
-### 2.1. 무비렌즈 데이터
+### 2.1. 무비렌즈 데이터 {#nlp-movielens-data}
 
 [무비렌즈(movieLens)](https://grouplens.org/datasets/movielens/) 데이터에 대한 내용을 확인하고 나서,
 [movielens 웹사이트](http://files.grouplens.org/datasets/movielens/)에서 크롤링하여 가져온다.
@@ -102,7 +101,7 @@ unzip(file.path(data_folder, dataset_zip), exdir = "data", overwrite = TRUE)
 list.files('data/', recursive=TRUE)
 ```
 
-### 2.2. 무비렌즈 데이터 전처리
+### 2.2. 무비렌즈 데이터 전처리 {#nlp-movielens-preprocessing}
 
 다운로드 받은 압축파일을 풀 경우, "movies", "ratings", "links", "tags" CSV 파일이 풀린다.
 이를 각각 불러와서 파일크기를 확인한다. 
@@ -154,7 +153,7 @@ skim(links)
 ```
 
 
-## 3. 탐색적 데이터 분석
+## 3. 탐색적 데이터 분석 {#nlp-movielens-eda}
 
 csv 파일을 데이터프레임으로 불러오게 되면 이제 데이터를 분석할 준비가 완료되어 있다.
 탐색적 데이터 분석을 위해서 데이터를 통해 해결하려는 질문을 뽑아보자.
@@ -165,7 +164,7 @@ csv 파일을 데이터프레임으로 불러오게 되면 이제 데이터를 �
 - 사용자 평점에 기초한 시대별 최고 영화는 무엇일까?
 - 사용자 평점에 기초한 쟝르별 최고 영화는 무엇일까?
 
-### 3.1. 연도별 출하되는 영화는 몇편이나 될까?
+### 3.1. 연도별 출하되는 영화는 몇편이나 될까? {#nlp-movielens-eda-01}
 
 ``` {r movielens-eda-moives-by-year}
 # 3. 탐색적 데이터 분석 --------------------------------------
@@ -187,9 +186,9 @@ movies_per_year %>%
     labs(x="", y="연도별 출시 영화빈도수")
 ```
 
-### 3.2. 각 쟝르별로 출하되는 영화편수는 어떨까?
+### 3.2. 각 쟝르별로 출하되는 영화편수는 어떨까? {#nlp-movielens-eda-02}
 
-``` {r movielens-eda-moives-by-genre-year}
+``` {r movielens-eda-moives-by-genre-year, eval=FALSE}
 ## 3.1. 연도별 영화 쟝르 출하 분석 --------------------------------
 movies_df %>%
     separate_rows(genres, sep = "\\|") %>% 
@@ -218,148 +217,9 @@ movies_df %>%
     theme(legend.position = "top")
 ```
 
-### 3.3. 각 쟝르를 특정 짓는 태그는 어떤 것이 있을까? {.tabset .tabset-fade .tabset-pills}
+### 3.3. 사용자 평점에 기초한 시대별 최고 영화는 무엇일까? {#nlp-movielens-eda-04}
 
-``` {r movielens-eda-moives-by-tags}
-## 3.3. 각 쟝르별 태그 --------------------------------
-genres_tags <- movies_df %>%
-    na.omit() %>%
-    select(movieId, year, genres) %>%
-    separate_rows(genres, sep = "\\|") %>%
-    inner_join(tags_df, by = "movieId") %>%
-    select(genres, tag) %>%
-    group_by(genres) %>%
-    nest()
-```
-
-#### 액션(Action)
-
-```{r q3-2}
-genre<-"Action"
-genre_words <- genres_tags %>%
-    filter(genres == genre) %>%
-    unnest() %>%
-    mutate(tag = str_to_lower(tag, "en")) %>%
-    anti_join(tibble(tag=c(tolower(genre)))) %>%
-    count(tag)
-
-wordcloud(genre_words$tag, genre_words$n, max.words = 50, colors=brewer.pal(8, "Dark2"))
-```
-
-#### 코메디(Comedy)
-
-```{r q3-3}
-# plot wordcloud per genre
-genre<-"Comedy"
-genre_words <- genres_tags %>%
-  filter(genres == genre) %>%
-  unnest() %>%
-  mutate(tag = str_to_lower(tag, "en")) %>%
-  anti_join(tibble(tag=c(tolower(genre)))) %>%
-  count(tag)
-
-  wordcloud(genre_words$tag, genre_words$n, max.words = 50, colors=brewer.pal(8, "Dark2"))
-```
-
-
-#### 드라마(Drama)
-
-```{r q3-4}
-# plot wordcloud per genre
-genre<-"Drama"
-genre_words <- genres_tags %>%
-  filter(genres == genre) %>%
-  unnest() %>%
-  mutate(tag = str_to_lower(tag, "en")) %>%
-  anti_join(tibble(tag=c(tolower(genre)))) %>%
-  count(tag)
-
-  wordcloud(genre_words$tag, genre_words$n, max.words = 50, colors=brewer.pal(8, "Dark2"))
-```
-
-
-#### 스릴러물(Thriller)
-
-```{r q3-5}
-# plot wordcloud per genre
-genre<-"Thriller"
-genre_words <- genres_tags %>%
-  filter(genres == genre) %>%
-  unnest() %>%
-  mutate(tag = str_to_lower(tag, "en")) %>%
-  anti_join(tibble(tag=c(tolower(genre)))) %>%
-  count(tag)
-
-  wordcloud(genre_words$tag, genre_words$n, max.words = 50, colors=brewer.pal(8, "Dark2"))
-```
-
-
-#### 공포(Horror)
-
-```{r q3-6}
-# plot wordcloud per genre
-genre<-"Horror"
-genre_words <- genres_tags %>%
-  filter(genres == genre) %>%
-  unnest() %>%
-  mutate(tag = str_to_lower(tag, "en")) %>%
-  anti_join(tibble(tag=c(tolower(genre)))) %>%
-  count(tag)
-
-  wordcloud(genre_words$tag, genre_words$n, max.words = 50, colors=brewer.pal(8, "Dark2"))
-```
-
-
-#### 아동(Children)
-
-```{r q3-7}
-# plot wordcloud per genre
-genre<-"Children"
-genre_words <- genres_tags %>%
-  filter(genres == genre) %>%
-  unnest() %>%
-  mutate(tag = str_to_lower(tag, "en")) %>%
-  anti_join(tibble(tag=c(tolower(genre), "animation"))) %>%
-  count(tag)
-
-  wordcloud(genre_words$tag, genre_words$n, max.words = 50, colors=brewer.pal(8, "Dark2"))
-```
-
-
-#### 범죄(Crime)
-
-```{r q3-8}
-# plot wordcloud per genre
-genre<-"Crime"
-genre_words <- genres_tags %>%
-  filter(genres == genre) %>%
-  unnest() %>%
-  mutate(tag = str_to_lower(tag, "en")) %>%
-  anti_join(tibble(tag=c(tolower(genre)))) %>%
-  count(tag)
-
-  wordcloud(genre_words$tag, genre_words$n, max.words = 50, colors=brewer.pal(8, "Dark2"))
-```
-
-
-#### 로맨스(Romance)
-
-```{r q3-9}
-# plot wordcloud per genre
-genre<-"Romance"
-genre_words <- genres_tags %>%
-  filter(genres == genre) %>%
-  unnest() %>%
-  mutate(tag = str_to_lower(tag, "en")) %>%
-  anti_join(tibble(tag=c(tolower(genre)))) %>%
-  count(tag)
-
-  wordcloud(genre_words$tag, genre_words$n, max.words = 50, colors=brewer.pal(8, "Dark2"))
-```
-
-### 3.4. 사용자 평점에 기초한 시대별 최고 영화는 무엇일까?
-
-``` {r movielens-eda-moives-by-decades}
+``` {r movielens-eda-moives-by-decades, eval=FALSE}
 ## 3.4. 사용자 평점에 기초한 시대별 최고 영화
 # https://districtdatalabs.silvrback.com/computing-a-bayesian-estimate-of-star-rating-means
 
@@ -396,9 +256,9 @@ avg_rating %>%
     DT::formatRound("count", digits = 0, interval = 3)
 ```
 
-### 3.5. 사용자 평점에 기초한 쟝르별 최고 영화는 무엇일까?
+### 3.4. 사용자 평점에 기초한 쟝르별 최고 영화는 무엇일까? {#nlp-movielens-eda-05}
 
-``` {r movielens-eda-moives-by-genre}
+``` {r movielens-eda-moives-by-genre, eval=FALSE}
 ## 3.5. 사용자 평점에 기초한 쟝르별 최고 영화
 
 genres_rating <- movies_df %>%
@@ -422,7 +282,147 @@ genres_rating %>%
     facet_wrap(~genres)
 ```
 
-## 4. 웹크로링
+
+## 3.5. 각 쟝르를 특정 짓는 태그는 어떤 것이 있을까? {.tabset .tabset-fade .tabset-pills} 
+
+``` {r movielens-eda-moives-by-tags}
+## 3.3. 각 쟝르별 태그 --------------------------------
+genres_tags <- movies_df %>%
+    na.omit() %>%
+    select(movieId, year, genres) %>%
+    separate_rows(genres, sep = "\\|") %>%
+    inner_join(tags_df, by = "movieId") %>%
+    select(genres, tag) %>%
+    group_by(genres) %>%
+    nest()
+```
+
+### 액션(Action)
+
+```{r q3-2}
+genre<-"Action"
+genre_words <- genres_tags %>%
+    filter(genres == genre) %>%
+    unnest() %>%
+    mutate(tag = str_to_lower(tag, "en")) %>%
+    anti_join(tibble(tag=c(tolower(genre)))) %>%
+    count(tag)
+
+wordcloud(genre_words$tag, genre_words$n, max.words = 50, colors=brewer.pal(8, "Dark2"))
+```
+
+### 코메디(Comedy)
+
+```{r q3-3}
+# plot wordcloud per genre
+genre<-"Comedy"
+genre_words <- genres_tags %>%
+  filter(genres == genre) %>%
+  unnest() %>%
+  mutate(tag = str_to_lower(tag, "en")) %>%
+  anti_join(tibble(tag=c(tolower(genre)))) %>%
+  count(tag)
+
+  wordcloud(genre_words$tag, genre_words$n, max.words = 50, colors=brewer.pal(8, "Dark2"))
+```
+
+
+### 드라마(Drama)
+
+```{r q3-4}
+# plot wordcloud per genre
+genre<-"Drama"
+genre_words <- genres_tags %>%
+  filter(genres == genre) %>%
+  unnest() %>%
+  mutate(tag = str_to_lower(tag, "en")) %>%
+  anti_join(tibble(tag=c(tolower(genre)))) %>%
+  count(tag)
+
+  wordcloud(genre_words$tag, genre_words$n, max.words = 50, colors=brewer.pal(8, "Dark2"))
+```
+
+
+### 스릴러물(Thriller)
+
+```{r q3-5}
+# plot wordcloud per genre
+genre<-"Thriller"
+genre_words <- genres_tags %>%
+  filter(genres == genre) %>%
+  unnest() %>%
+  mutate(tag = str_to_lower(tag, "en")) %>%
+  anti_join(tibble(tag=c(tolower(genre)))) %>%
+  count(tag)
+
+  wordcloud(genre_words$tag, genre_words$n, max.words = 50, colors=brewer.pal(8, "Dark2"))
+```
+
+
+### 공포(Horror)
+
+```{r q3-6}
+# plot wordcloud per genre
+genre<-"Horror"
+genre_words <- genres_tags %>%
+  filter(genres == genre) %>%
+  unnest() %>%
+  mutate(tag = str_to_lower(tag, "en")) %>%
+  anti_join(tibble(tag=c(tolower(genre)))) %>%
+  count(tag)
+
+  wordcloud(genre_words$tag, genre_words$n, max.words = 50, colors=brewer.pal(8, "Dark2"))
+```
+
+
+### 아동(Children)
+
+```{r q3-7}
+# plot wordcloud per genre
+genre<-"Children"
+genre_words <- genres_tags %>%
+  filter(genres == genre) %>%
+  unnest() %>%
+  mutate(tag = str_to_lower(tag, "en")) %>%
+  anti_join(tibble(tag=c(tolower(genre), "animation"))) %>%
+  count(tag)
+
+  wordcloud(genre_words$tag, genre_words$n, max.words = 50, colors=brewer.pal(8, "Dark2"))
+```
+
+
+### 범죄(Crime)
+
+```{r q3-8}
+# plot wordcloud per genre
+genre<-"Crime"
+genre_words <- genres_tags %>%
+  filter(genres == genre) %>%
+  unnest() %>%
+  mutate(tag = str_to_lower(tag, "en")) %>%
+  anti_join(tibble(tag=c(tolower(genre)))) %>%
+  count(tag)
+
+  wordcloud(genre_words$tag, genre_words$n, max.words = 50, colors=brewer.pal(8, "Dark2"))
+```
+
+
+### 로맨스(Romance)
+
+```{r q3-9}
+# plot wordcloud per genre
+genre<-"Romance"
+genre_words <- genres_tags %>%
+  filter(genres == genre) %>%
+  unnest() %>%
+  mutate(tag = str_to_lower(tag, "en")) %>%
+  anti_join(tibble(tag=c(tolower(genre)))) %>%
+  count(tag)
+
+  wordcloud(genre_words$tag, genre_words$n, max.words = 50, colors=brewer.pal(8, "Dark2"))
+```
+
+## 4. 웹크로링 {#nlp-movielens-imbd}
 
 무비렌즈 영화 데이터에 담겨있지 못한 정보를 [IMDB](http://www.imdb.com) 웹사이트에서 
 긁어와서 이를 병합하여 추가 분석을 실시한다.
