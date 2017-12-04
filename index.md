@@ -18,8 +18,7 @@ title: 자연어 처리 - 텍스트
 1. **텍스트 데이터 다루기**
     1. [숫자를 문자로 표현](nlp-number-to-text.html)
     1. [stringr을 통해 문자열/텍스트 다루기](nlp-stringr.html)
-    1. [텍스트 데이터 수집 -- 트위터](nlp-text-twitter.html)
-    1. [단어문서행렬 -- 단어 빈도](nlp-text-tdm.html)
+    1. [텍스트 데이터 수집 및 단어문서행렬(TDM) -- 트위터](nlp-text-twitter.html)
 1. **텍스트 기초 분석**
     1. [해외연극 등장인물 출현횟수](nlp-movie-play.html)
     1. [국내영화(건축학 개론) 등장인물 출현횟수](nlp-movie-arch101.html)
