@@ -78,7 +78,7 @@ useNIADic(which_dic = c("woorimalsam", "insighter"), category_dic_nms = "politic
 
 먼저 책 데이터를 불러온 다음, 한글 관련 내용만 추출하고 나서, 말뭉치 정제 과정을 거친다.
 
-``` {r hq-corpus}
+``` {r hq-corpus, eval=FALSE}
 book <- readLines("data/저녁이 있는 삶.txt", encoding="UTF-8")
 
 # http://stackoverflow.com/questions/9637278/r-tm-package-invalid-input-in-utf8towcs
@@ -103,7 +103,7 @@ book_tdm <- TermDocumentMatrix(book_corpus, control=list(wordLengths=c(2,Inf)))
 
 가장 많이 회자되고 있는 단어는 경제가 중심이고, 사회, 성장, 복지, 우리, 국민 순으로 체계적으로 정리된 것이 관찰된다.
 
-``` {r hq-wordcloud}
+``` {r hq-wordcloud, eval=FALSE}
 #시각화---------------------------------------------------------------------
 library(ggplot2)
 
@@ -132,7 +132,7 @@ wordcloud(words = names(wordFreq), freq = wordFreq, min.freq = 20, random.order 
 KAIST 품사 태그셋 `SimplePos22` 형태소 분석결과를 바탕으로 분석하면 다음과 같다.
 보통명사만 뽑아내서 분석하는 과정은 다음과 같다.
 
-``` {r hq-morphanalyzer}
+``` {r hq-morphanalyzer, eval=FALSE}
 book_lem <- sapply(book, SimplePos22, USE.NAMES = FALSE)
 # NC 보통명사
 book_lem_nc <- lapply(book_lem, function(x) grep("/NC", x, value=T))
@@ -186,7 +186,7 @@ wordcloud(words = names(wordFreq), freq = wordFreq, min.freq = 7, random.order =
 [`wordcloud2`](https://cran.r-project.org/web/packages/wordcloud2/vignettes/wordcloud.html) 팩키지의 기능 중
 이미지를 **마스크(Mask)**로 삼아 시각화한다.
 
-``` {r hq-book-wordcloud2}
+``` {r hq-book-wordcloud2, eval=FALSE}
 # 1. 텍스트 전처리 함수
 clean_text <- function(text){
   text <- str_replace_all(text,"[^[:graph:]]", " ")
