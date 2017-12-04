@@ -101,7 +101,7 @@ Tiago A. Almeida, José Maria Gómez Hidalgo 분들이 생성한 `SMS Spam Colle
 [http://www.dt.fee.unicamp.br/~tiago/smsspamcollection/smsspamcollection.zip](http://www.dt.fee.unicamp.br/~tiago/smsspamcollection/smsspamcollection.zip) 
 웹사이트에서 직접 다운로드 해서 모형 개발 디렉토리 넣고 압축을 풀어 분석을 수행해도 된다.
 
-``` {r naive-bayes-spam-import}
+``` {r naive-bayes-spam-import} 
 # 0. 환경설정 -------------------------------------
 # library(tidyverse)
 # library(caret)
