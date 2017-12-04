@@ -82,7 +82,7 @@ clean_corpus <- function(corpus){
     * Question answering (QA)
     * Paraphrase
     * Summarization
-    * Dialog
+    * Dialog 
 
 <img src="fig/ml-text-technology-roadmap.png" alt="언어기술 " width="70%" />
 

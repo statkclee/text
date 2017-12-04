@@ -22,7 +22,6 @@ title: 자연어 처리 - 텍스트
 1. [단어주머니(Bag of Words)](nlp-bag-of-words.html)
     1. [해외연극 등장인물 출현횟수](nlp-movie-play.html)
     1. [국내영화(건축학 개론) 등장인물 출현횟수](nlp-movie-arch101.html)
-1. **[텍스트 마이닝(text mining)](nlp-text.html)**
     1. [소설 텍스트 데이터 분석 -- 소나기](nlp-text-basic.html)
     1. [저녁이 있는 삶 -- 손학규](nlp-book.html)
     1. [연설문 판별 - 오바마 vs. 롬니](http://statkclee.github.io/politics/text-classify-speeches.html)
