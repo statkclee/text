@@ -5,7 +5,6 @@ subtitle: 정규표현식에서 워드2벡(Word2Vec)
 output:
   html_document: 
     toc: yes
-    keep_md: yes
   pdf_document:
     latex_engine: xelatex
 mainfont: NanumGothic
@@ -105,7 +104,7 @@ roh_16_token  <- tokenize_words(roh_16_txt)
 그리고 나서 `train_word2vec` 명령어를 실행시켜 `word2vec` 모형을 생성시킨다.
 즉 벡터 20개로 단어를 벡터공간에 재배열시킨다.
 
-``` {r president-word2vec}
+``` {r president-word2vec, eval=FALSE}
 # 3. Word2Vec  ----------------------------------------
 
 prep_word2vec(origin="data/president", destination="data/president/president_speech.txt", lowercase=TRUE, bundle_ngrams=2)
