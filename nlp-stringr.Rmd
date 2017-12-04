@@ -1,11 +1,10 @@
 ---
 layout: page
-title: xwMOOC 기계학습
+title: xwMOOC 자연어 처리 - 텍스트
 subtitle: stringr을 통해 문자열/텍스트 다루기
 output:
   html_document: 
     toc: yes
-    keep_md: yes
   pdf_document:
     latex_engine: xelatex
 mainfont: NanumGothic
@@ -19,7 +18,7 @@ library(stringr)
 library(stringi)
 ```
 
-## 텍스트/문자열을 다루는 R 툴체인
+## 1. 텍스트/문자열을 다루는 R 툴체인 {#nlp-stringr-toolchain}
 
 텍스트 데이터는 신문기사, 책, 블로그, 채팅로그 등 다양한 형태로 나타난다. 이런 텍스트를 다루는데 별도 언어가 필요한데 
 이것이 **정규표현식(regular expression)**이다. 강력한 정규표현식을 사용하기 위해서 기본적으로 R에서 문자열을 불러오고 패턴을 매칭하고,
@@ -32,11 +31,12 @@ library(stringi)
 - [stringr](https://github.com/tidyverse/stringr): RStudio 개발환경에서 `str_` + 탭완성 기능을 조합하여 일관성을 갖고 가장 많이 사용되는 문자열 처리 기능을 함수로 제공하는 팩키지
 - [stringi](https://github.com/gagolews/stringi): 속도 및 확장성, 기능에서 R 환경에서 타의 추종을 불허하는 기본 문자열 처리 R 팩키지
 
-텍스트/문자열 처리작업을 수행할 때 `tidyverse` 팩키지와 마찬가지로 복잡하고 난잡한 부분을 가능하면 숨기고 나서 가장 많이 활용되는 기능만 뽑아서 가장 생산성 높게 사용하는 툴체인으로 활용가능하다.
+텍스트/문자열 처리작업을 수행할 때 `tidyverse` 팩키지와 마찬가지로 복잡하고 난잡한 부분을 가능하면 숨기고 나서 
+가장 많이 활용되는 기능만 뽑아서 가장 생산성 높게 사용하는 툴체인으로 활용가능하다.
 
-## 문자열 기본 작업
+## 2. 문자열 기본 작업 {#nlp-stringr-basic-operation}
 
-### 문자열 찾고, 문자열 쪼개고, 문자열 치환
+### 2.1. 문자열 찾고, 문자열 쪼개고, 문자열 치환 {#nlp-stringr-detect}
 
 기본적으로 작업하는 기본 문자열 작업은 문자열을 찾고, 문자열을 쪼개고, 문자열을 치환하는 작업이다.
 `stringr`에서 문자열 매칭에 문자열을 탐지하고, 탐지된 문자열을 뽑아내고, 매칭된 문자열 갯수를 찾아내는 기본작업을 지원한다.
@@ -81,7 +81,7 @@ str_replace_all(hanguls,
                 replacement = " 그리고")
 ```
 
-## 정규(표현)식
+## 3. 정규(표현)식 {#nlp-regular-expression}
 
 정규(표현)식을 문자열에 적용할 경우 기본적으로 다음과 같이 코드를 준비한다.
 
@@ -92,7 +92,7 @@ str_replace_all(hanguls,
 입력 문자열과 문자열 작업에 맞는 함수를 선택하는 것은 상대적으로 변수가 많이 없는데 정규표현식 패턴을 작성하는 작업은 별도로 작성하는 것이 정신건강에 좋다.
 특히, `str_view()` 함수를 사용하게 되면 패턴에 매칭된 결과를 시각적으로 빠르게 확인할 수 있다.
 
-### `rebus` 정규식
+### 3.1. `rebus` 정규식 {#nlp-regular-expression-rebus}
 
 `^.\\d+` 정규표현식은 다른 언어에서 `^.\d+`와 같은 것으로 `\` 한번 더 들어가는 것을 유의한다.
 의미는 `^` 시작한다는 의미가 되는데 `.` 한 문자로 시작되고 `\\d` 숫자 하나를 의미하는데 `+`가 있어 숫자를 다수 의미한다.
@@ -133,7 +133,7 @@ str_detect(auto_v, pattern = rebus_pattern)
 str_view(auto_v, pattern = rebus_pattern)
 ```
 
-### 한글 정규식
+### 3.2. 한글 정규식 {#nlp-regular-expression-hangul}
 
 숫자(DGT), 단어(WRD), 화이트스페이스(SPC)와 같이 한글이 별도로 정의된 것이 없어 `char_class` 함수에 
 한글 정규표현식을 담아 사용한다. 즉, 한글 한글자 추출 `char_class("가-흫")`, 한글 단어 추출은 
@@ -156,7 +156,7 @@ hangul_pattern <- repeated(one_or_more(char_class("가-흫")), 4)
 str_view(auto_v, pattern = hangul_pattern)
 ```
 
-### 포획(Capture)
+### 3.3. 포획(Capture) {#nlp-regular-expression-capture}
 
 포획(capture)을 잘 설명하는 예제는 달러의 달러부분과 센트 부분을 나누는 예제를 생각해볼 수 있다.
 이런 경우 `caputre` 함수를 사용해서 결과 값을 달러와 센트로 나눠 저장하여 분석한다.
@@ -184,7 +184,7 @@ kmoney_pattern <- char_class("\u20A9") %R%
 str_match(kmoney_v, pattern = kmoney_pattern)
 ```
 
-### 역참조(back reference) [^regex-blog]
+### 3.4. 역참조(back reference) [^regex-blog] {#nlp-regular-expression-back-reference}
 
 [^regex-blog]: [Regex, 역참조 사용하기](http://minsone.github.io/regex/regexp-backreference)
 
@@ -212,7 +212,7 @@ str_replace(auto_v,
 ```
 
 
-## 정규표현식 사례 [^regex-email]
+## 4. 정규표현식 사례 [^regex-email] {#nlp-regular-expression-example}
 
 [^regex-email]: [Using a regular expression to validate an email address
 ](http://stackoverflow.com/questions/201323/using-a-regular-expression-to-validate-an-email-address/201378#201378)
