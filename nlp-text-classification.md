@@ -11,31 +11,7 @@ output:
 mainfont: NanumGothic
 ---
  
-``` {r, include=FALSE}
-source("tools/chunk-options.R")
-knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
 
-library(tidyverse)
-library(caret)
-library(tm)
-library(extrafont)
-loadfonts()
-library(ggthemes)
-library(doMC)
-registerDoMC(cores=4)
-library(e1071)
-library(forcats)
-library(randomForest)
-library(extrafont)
-library(knitr)
-library(gridExtra)
-library(FactoMineR)
-library(ggmosaic)
-
-options(scipen = 999)
-options(dplyr.width = 120)
-options(dplyr.print_max = 1e9)
-```
 
 ## 1. 텍스트 분류(Text classification) [^apac-machine-learning-summit]
 
@@ -101,7 +77,8 @@ Tiago A. Almeida, José Maria Gómez Hidalgo 분들이 생성한 `SMS Spam Colle
 [http://www.dt.fee.unicamp.br/~tiago/smsspamcollection/smsspamcollection.zip](http://www.dt.fee.unicamp.br/~tiago/smsspamcollection/smsspamcollection.zip) 
 웹사이트에서 직접 다운로드 해서 모형 개발 디렉토리 넣고 압축을 풀어 분석을 수행해도 된다.
 
-``` {r naive-bayes-spam-import} 
+
+~~~{.r}
 # 0. 환경설정 -------------------------------------
 # library(tidyverse)
 # library(caret)
@@ -130,7 +107,7 @@ Tiago A. Almeida, José Maria Gómez Hidalgo 분들이 생성한 `SMS Spam Colle
 
 sms_raw <- read_delim("data/SMSSpamCollection/SMSSpamCollection.txt", delim="\t", col_names = FALSE)
 colnames(sms_raw) <- c("type", "text")
-```
+~~~
 
 ### 3.2. 데이터 전처리
 
@@ -139,7 +116,8 @@ colnames(sms_raw) <- c("type", "text")
 나이브 베이즈 모형에 넣도록 단어를 추출해서 이를 문선단어행렬(DocumentTermMatrix)로 변환한다.
 그리고 훈련과 검증 데이터로 분할한다.
 
-``` {r naive-bayes-spam-preprocessing}
+
+~~~{.r}
 # 2. 데이터 전처리 -------------------------------------
 sms_raw$type <- factor(sms_raw$type)
 
@@ -185,7 +163,10 @@ sms_train %>% tbl_df %>%
     sample_n(100) %>% 
     dplyr::select(1:10) %>% 
     DT::datatable()
-```
+~~~
+
+<!--html_preserve--><div id="htmlwidget-fe3ca012051e2f68dd14" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-fe3ca012051e2f68dd14">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60","61","62","63","64","65","66","67","68","69","70","71","72","73","74","75","76","77","78","79","80","81","82","83","84","85","86","87","88","89","90","91","92","93","94","95","96","97","98","99","100"],["Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Present","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent"],["Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent"],["Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent"],["Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Present","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent"],["Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent"],["Absent","Absent","Absent","Absent","Absent","Absent","Present","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent"],["Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent"],["Absent","Absent","Absent","Absent","Absent","Absent","Present","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Present","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent"],["Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent"],["Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent","Absent"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>lar<\/th>\n      <th>wif<\/th>\n      <th>apply<\/th>\n      <th>comp<\/th>\n      <th>cup<\/th>\n      <th>entry<\/th>\n      <th>final<\/th>\n      <th>free<\/th>\n      <th>may<\/th>\n      <th>receive<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"order":[],"autoWidth":false,"orderClasses":false,"columnDefs":[{"orderable":false,"targets":0}]}},"evals":[],"jsHooks":[]}</script><!--/html_preserve-->
 
 ### 3.3. 나이브 베이즈 모형
 
@@ -193,7 +174,8 @@ sms_train %>% tbl_df %>%
 나이브베이즈 모형의 성능평가는 훈련데이터가 아니라 검증데이터를 활용하여 성능을 평가한다.
 그리고, `ggplot`을 활용하여 스팸과 정상 SMS 확률을 시각화한다.
 
-``` {r naive-bayes-spam-naive-bayes, eval=FALSE}
+
+~~~{.r}
 ## 3.3. 베이즈모형 적합 -------------------------------
 ctrl <- trainControl(method="cv", number=10, repeats=3)
 nb_grid <- data.frame(.fL=c(1), .usekernel=c(FALSE), .adjust=c(FALSE))
@@ -225,8 +207,7 @@ sms_nb_prob %>%
     labs(x="", y="밀도", title="단문문자 스팸 분류기 성능") +
     theme(legend.position = "top") +
     guides(alpha=FALSE)
-
-```
+~~~
 
 ## 4. 유방암 발병 예측 [^navie-bayes-breast-cancer]
 
@@ -255,7 +236,8 @@ UCI에 담당자에게 전자우편을 전달하면 2--3일 후 전달받을 수
 UCI 담당자에게서 전달받은 데이터를 불러와서, 
 데이터분석을 위해 변수명을 부여하고 문자형 데이터를 요인형 데이터로 변환시켜 `naiveBayes` 모형 적합시킬 준비를 한다.
 
-``` {r nb-breast-cancer}
+
+~~~{.r}
 # 0. 환경설정 -----------------------
 # library(tidyverse)
 # library(e1071)
@@ -273,7 +255,7 @@ breast_cancer <- breast_cancer %>%
     mutate(class = fct_relevel(class, "recurrence-events", "no-recurrence-events"))
 
 # glimpse(breast_cancer)    
-```
+~~~
 
 ### 4.3. 유방암 발병 탐색적 데이터 분석
 
@@ -284,7 +266,8 @@ breast_cancer <- breast_cancer %>%
 대응분석을 실시한다.
 
 
-``` {r nb-breast-cancer-ca}
+
+~~~{.r}
 # 3. 탐색적 데이터 분석 -----------------------
 bc_df <- breast_cancer %>% 
     group_by(class,age, menopause, tumor.size, inv.nodes, node.caps, deg.malign, breast.quad, irradia) %>% 
@@ -297,12 +280,15 @@ par(mfrow=c(1,3))
 plot(bc_mca, axes=c(1,2), choix="var", autoLab="n", invisible = c( "ind"),  shadow=TRUE, hab="quali")
 plot(bc_mca, axes=c(1,3), choix="var", autoLab="n", invisible = c( "ind"),  shadow=TRUE, hab="quali")
 plot(bc_mca, axes=c(2,3), choix="var", autoLab="n", invisible = c( "ind"),  shadow=TRUE, hab="quali")
-```
+~~~
+
+<img src="fig/nb-breast-cancer-ca-1.png" style="display: block; margin: auto;" />
 
 대응분석으로 `class` 종속변수와 관련성 높은 설명변수를 일부 추려 모자이크 그래프를 통해 시각화한다.
 
 
-``` {r nb-breast-cancer-ggplot, eval=FALSE}
+
+~~~{.r}
 ## 3.2. ggplot 시각화
 class_by_nodes_gg <- ggplot(bc_df) +
     geom_mosaic(aes(weight=cnt, x=product(age), fill=class) ,na.rm=TRUE) +
@@ -325,12 +311,13 @@ class_by_quad_gg <- ggplot(bc_df) +
     guides(fill=guide_legend(title = "유방암 발병", reverse = TRUE))
 
 grid.arrange(class_by_nodes_gg, class_by_quad_gg, ncol=2)
-```
+~~~
 
 범주형 데이터를 시각화하는 것과 함께 `dplyr` 깔끔한(tidy) 데이터를 바탕으로 
 표로 표현하는 것도 가능하다.
 
-``` {r nb-breast-cancer-table}
+
+~~~{.r}
 # breast_cancer %>% 
 #     ungroup() %>% 
 #     count(class, age, breast.quad) %>% 
@@ -347,11 +334,54 @@ breast_cancer %>%
     # select(-n) %>%
     spread(age, pcnt, fill=0) %>% 
     kable()
-```
+~~~
+
+
+
+class                  breast.quad     n  20-29   30-39   40-49   50-59    60-69   70-79 
+---------------------  ------------  ---  ------  ------  ------  -------  ------  ------
+recurrence-events      ?               1  0       0       0       100%     0       0     
+recurrence-events      central         1  0       20%     0       12.5%    0       0     
+recurrence-events      central         2  0       0       0       0        50%     0     
+recurrence-events      left_low        1  0       0       0       0        0       100%  
+recurrence-events      left_low        6  0       0       0       0        25%     0     
+recurrence-events      left_low        7  0       50%     0       0        0       0     
+recurrence-events      left_low        9  0       0       0       23.7%    0       0     
+recurrence-events      left_low       12  0       0       36.4%   0        0       0     
+recurrence-events      left_up         5  0       0       0       0        22.7%   0     
+recurrence-events      left_up         6  0       60%     0       18.8%    0       0     
+recurrence-events      left_up         9  0       0       29%     0        0       0     
+recurrence-events      right_low       1  0       25%     9.1%    0        50%     0     
+recurrence-events      right_low       3  0       0       0       50%      0       0     
+recurrence-events      right_up        3  0       0       0       0        60%     0     
+recurrence-events      right_up        5  0       0       41.7%   45.45%   0       0     
+no-recurrence-events   central         1  0       0       0       0        0       100%  
+no-recurrence-events   central         2  0       0       0       0        50%     0     
+no-recurrence-events   central         3  0       0       100%    0        0       0     
+no-recurrence-events   central         4  0       80%     0       0        0       0     
+no-recurrence-events   central         7  0       0       0       87.5%    0       0     
+no-recurrence-events   left_low        7  0       50%     0       0        0       0     
+no-recurrence-events   left_low       18  0       0       0       0        75%     0     
+no-recurrence-events   left_low       21  0       0       63.6%   0        0       0     
+no-recurrence-events   left_low       29  0       0       0       76.3%    0       0     
+no-recurrence-events   left_up         2  0       0       0       0        0       100%  
+no-recurrence-events   left_up         4  0       40%     0       0        0       0     
+no-recurrence-events   left_up        17  0       0       0       0        77.3%   0     
+no-recurrence-events   left_up        22  0       0       71%     0        0       0     
+no-recurrence-events   left_up        26  0       0       0       81.2%    0       0     
+no-recurrence-events   right_low       1  0       0       0       0        50%     100%  
+no-recurrence-events   right_low       3  0       75%     0       50%      0       0     
+no-recurrence-events   right_low      10  0       0       90.9%   0        0       0     
+no-recurrence-events   right_up        1  100%    0       0       0        0       100%  
+no-recurrence-events   right_up        2  0       0       0       0        40%     0     
+no-recurrence-events   right_up        3  0       100%    0       0        0       0     
+no-recurrence-events   right_up        6  0       0       0       54.55%   0       0     
+no-recurrence-events   right_up        7  0       0       58.3%   0        0       0     
 
 `tumor.size`도 고려하여 모자이크 그래프를 통해 시각화한다.
 
-``` {r nb-breast-cancer-ggplot2, eval=FALSE}
+
+~~~{.r}
 ggplot(bc_df) +
     geom_mosaic(aes(weight=cnt, x=product(age), fill=class) ,na.rm=TRUE) +
     facet_grid(tumor.size~.)  +
@@ -361,11 +391,12 @@ ggplot(bc_df) +
           legend.position='right', legend.direction='vertical') +
     scale_fill_brewer(palette="Set2") +
     guides(fill=guide_legend(title = "유방암 발병", reverse = TRUE))
-```
+~~~
 
 `Random Forest` 팩키지를 활용하여 예측에 중요하게 사용되는 변수도 추출해 본다.
 
-``` {r nb-breast-cancer-rf}
+
+~~~{.r}
 # 4. randomForest -----------------------
 bc_fit <- randomForest(class ~ .,
                     data=breast_cancer, 
@@ -374,22 +405,62 @@ bc_fit <- randomForest(class ~ .,
 
 par(family = "NanumGothic")
 varImpPlot(bc_fit, main="유방암 예측 변수 중요도")
+~~~
 
+<img src="fig/nb-breast-cancer-rf-1.png" style="display: block; margin: auto;" />
+
+~~~{.r}
 bc_pred <- predict(bc_fit, breast_cancer, type="response")
 (conf_matrix <- table(bc_pred, breast_cancer$class))
-```
+~~~
+
+
+
+~~~{.output}
+                      
+bc_pred                recurrence-events no-recurrence-events
+  recurrence-events                   73                    1
+  no-recurrence-events                12                  200
+
+~~~
 
 ### 4.2. 나이브 베이즈 모형 적합
 
 `e1071` 팩키지에 포함된 `naiveBayes` 모형을 활용하여 예측 모형을 생성한다.
 그리고, 오차행렬을 통해 전체 데이터에 대한 예측 정확도를 평가한다.
 
-``` {r nb-breast-cancer-fit}
+
+~~~{.r}
 # 3. 나이브 베이즈 모형 -----------------------
 model <- naiveBayes(class ~ ., data = breast_cancer)
 summary(model)
+~~~
 
+
+
+~~~{.output}
+        Length Class  Mode     
+apriori 2      table  numeric  
+tables  9      -none- list     
+levels  2      -none- character
+call    4      -none- call     
+
+~~~
+
+
+
+~~~{.r}
 # 4. 모형 성능평가 -----------------------
 preds <- predict(model, newdata = breast_cancer)
 (conf_matrix <- table(preds, breast_cancer$class))
-```
+~~~
+
+
+
+~~~{.output}
+                      
+preds                  recurrence-events no-recurrence-events
+  recurrence-events                   47                   32
+  no-recurrence-events                38                  169
+
+~~~
