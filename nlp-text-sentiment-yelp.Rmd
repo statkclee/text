@@ -1,6 +1,6 @@
 ---
 layout: page
-title: xwMOOC 기계학습
+title: xwMOOC 자연어 처리 - 텍스트
 subtitle: 고객 방문후기 평점 감성분석 - 옐프(Yelp)
 output:
   html_document: 
@@ -32,19 +32,19 @@ options(scipen = 999)
 # options(dplyr.print_max = 1e9)
 ```
 
-## 1. 고객 방문후기 데이터 
+## 1. 고객 방문후기 데이터 {#nlp-yelp-data}
 
 고객이 식당을 방문하고 후기를 남기게 되면 그 자체로 재앙이다. 
 데이터 분석하는 입장에서 남긴 후기 텍스트 데이터와 숫자형 평점 데이터(별점 1개 ... 별점 5개)가 결합된 형식의 데이터라 
 어떻게 분석을 하게 되면 가장 많은 정보를 추출하여 유용하게 사용할 수 있을 것인가 !!!
 
-## 2. 옐프 고객 후기 평점 데이터 [^variance-explianed-yelp] [^juliasilge-tidytext]
+## 2. 옐프 고객 후기 평점 데이터 [^variance-explianed-yelp] [^juliasilge-tidytext] {#nlp-yelp-data-review}
 
 [^variance-explianed-yelp]: [Does sentiment analysis work? A tidy analysis of Yelp reviews](http://varianceexplained.org/r/yelp-sentiment/)
 
 [^juliasilge-tidytext]: [THE LIFE-CHANGING MAGIC OF TIDYING TEXT](https://juliasilge.com/blog/life-changing-magic/)
 
-### 2.1. 옐프 고객 후기 데이터
+### 2.1. 옐프 고객 후기 데이터 {#nlp-yelp-review-data}
 
 [Yelp Dataset Challenge](https://www.yelp.com/dataset_challenge)에서 데이터를 다운로드 받아 보게 되면 크게 두가지를 사실을 파악하게 된다.
 고객후기 데이터가 정말 많다. 그리고, 고객후기 데이터의 전형적인 패턴을 볼 수 있다.
@@ -80,7 +80,7 @@ review_df %>%
     DT::datatable()
 ```
 
-### 2.2. 고객평점과 긍부정 단어 연관성
+### 2.2. 고객평점과 긍부정 단어 연관성 {#nlp-yelp-data-association}
 
 가장 먼저 평정과 고객 방문후기에 적힌 텍스트에 감정이 녹아있는지 확인해보자.
 이를 위해 고객이 남긴 방문후기를 `tidytext`로 변환을 시킨 후에 감성사전을 병합한다.
@@ -137,7 +137,7 @@ ggplot(reviews_sentiment, aes(stars, sentiment, group = stars)) +
 예상한 바와 같이 별점이 높아질수록 평균감성 점수도 함께 올라간다. 하지만, 이상점도 함께 증가하는 것이 파악되어 
 추가 작업은 필요해 보인다.
 
-### 2.3. 긍정/부정이 높은 단어
+### 2.3. 긍정/부정이 높은 단어 {#nlp-yelp-data-positive-negative}
 
 고객방문 후기에 담긴 텍스트를 통해 긍정/부정이 높은 단어는 어떤 것이 있는지 확인해본다.
 식당(`business_id`)에서 고객(`review_id`)이 남긴 평점(stars)별로 남긴 단어 출현횟수를 센다.
@@ -188,7 +188,7 @@ ggplot(word_summaries_filtered, aes(reviews, average_stars)) +
     labs(x="고객 리뷰건수", y="평균 평점", title="고객 리뷰 평점과 연관된 단어")
 ```
 
-### 2.4. 고객 방문후기 연관단어
+### 2.4. 고객 방문후기 연관단어 {#nlp-yelp-data-associated-word}
 
 고객 방문후기에 동시에 출현하는 단어를 뽑아내고 이를 그래프를 통해 시각화한다.
 
@@ -212,7 +212,7 @@ word_cooccurences %>%
     theme_void()
 ```
 
-### 2.5. 긍부정어 고객후기반영 감성 시각화
+### 2.5. 긍부정어 고객후기반영 감성 시각화 {#nlp-yelp-data-sentiment}
 
 긍부정어를 `AFINN` 감성사전을 활용하여 색상을 넣어 시각화한다.
 
