@@ -96,7 +96,7 @@ sorted.sonagi.freqs.t <- sort(sonagi.freqs.t , decreasing=TRUE)
 head(sorted.sonagi.freqs.t, 10)
 ```
 
-출현빈도가 높은 단어를 파악했는데, 이를 상대적인 빈도비율을 계산해보자. 
+출현빈도가 높은 단어를 파악했는데, 이를 상대적인 빈도비율을 계산해보자.  
 
 ```{r ml-text-sonagi-freq-plot, tidy=FALSE}
 sorted.sonagi.rel.freqs.t <- 100*(sorted.sonagi.freqs.t/sum(sorted.sonagi.freqs.t))
