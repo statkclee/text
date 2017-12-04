@@ -1,10 +1,10 @@
 ---
 layout: page
-title: xwMOOC 기계학습
-subtitle: 텍스트 단어구름(Word Cloud)
+title: xwMOOC 자연어 처리 - 텍스트
+subtitle: 단어주머니(Bag of Words)
 output:
   html_document: 
-    keep_md: yes
+    toc: yes
   pdf_document:
     latex_engine: xelatex
 mainfont: NanumGothic
@@ -12,7 +12,8 @@ mainfont: NanumGothic
  
 ``` {r, include=FALSE}
 source("tools/chunk-options.R")
-options(warn=-1)
+knitr::opts_knit$set(verbose = FALSE, echo=FALSE, message=FALSE, warning =FALSE)
+
 library(tm)
 library(tidytext)
 library(qdap)
@@ -58,14 +59,14 @@ clean_corpus <- function(corpus){
 > * 단어주머니(Bag of Words) 모형을 이해한다.
 > * 텍스트 데이터 전처리 과정의 핵심 팩키지 `tm`과 `qdap`을 활용한다.
 
-## 1. 텍스트 분석 R 팩키지
+## 1. 텍스트 분석 R 팩키지 {#nlp-r-pkg}
 
 - [tm](https://cran.r-project.org/web/packages/tm/) : 텍스트 마이닝 
 - SnowballC : 어간추출(Stemming)
 - ggplot2 : 시각화
 - wordcloud : 단어구름
 
-## 2. 텍스트 분석 작업흐름도
+## 2. 텍스트 분석 작업흐름도 {#nlp-r-workflow}
 
 텍스트 데이터를 말뭉치(Corpus)로 변환하여 데이터를 분석하는 것도 가능하지만,
 `qdap` 팩키지와 정규표현식의 기능을 적극 활용하여 가능하면 텍스트에서 전처리를 하고 나서,
@@ -76,7 +77,7 @@ clean_corpus <- function(corpus){
 
 <img src="fig/tm_workflow.png" alt="텍스트에서 말뭉치로 변환" width="77%" />
 
-### 2.1. `qdap`, `tm` 텍스트 자료구조 비교
+### 2.1. `qdap`, `tm` 텍스트 자료구조 비교 {#nlp-tm-qdap}
 
 [텍스트 마이닝(Text Mining)](https://en.wikipedia.org/wiki/Text_mining)을 위한 R의 대표적인  팩키지가 `qdap` `tm` 이다.
 
@@ -98,7 +99,7 @@ clean_corpus <- function(corpus){
 * `qdap` 단어 빈도수 `qdap_wfm` &rarr; summary(qdap_wfm)
 * `tm` 단어 빈도수 `tm_tdm` &rarr; inspect(tm_tdm)
 
-### 2. `tm`, `qdap` 데이터 정제 기능
+### 2. `tm`, `qdap` 데이터 정제 기능 {#nlp-tm-qdap-cleansing}
 
 <img src="fig/ml-text-cleaning.png" alt="tm, qdap 전처리 기능" width="70%" />
 
@@ -140,7 +141,7 @@ removeWords(text, stop_words_lst)
 removeWords() 함수로 새로 갱신된 사전에 맞춰 불용어를 정리한다.
 
 
-### 2.2. 텍스트에서 말뭉치(Corpus)로 변환
+### 2.2. 텍스트에서 말뭉치(Corpus)로 변환 {#nlp-r-text2corpus}
 
 텍스트 마이닝을 통해 데이터를 분석하려면 우선 원데이터가 텍스트 형태로 되어 있고 이를 말뭉치로 변환하여야 한다.
 데이터가 벡터 형태(연설문 등) 혹은 데이터프레임 형태(트위터 트윗 등)에 따라 `VectorSource()`, `DataframeSource()` 함수를 적용하여 
@@ -150,7 +151,7 @@ removeWords() 함수로 새로 갱신된 사전에 맞춰 불용어를 정리한
 
 <img src="fig/tm_from_text_to_corpus.png" alt="텍스트에서 말뭉치로 변환" width="77%" />
 
-### 2.3. 말뭉치 정제 
+### 2.3. 말뭉치 정제  {#nlp-r-corpus-cleansing}
 
 텍스트를 말뭉치 객체로 저장시켜 놓으면, 말뭉치 정제 과정을 거치야 된다.
 기본적으로 어떤 말뭉치 정제에 사용되는 기본 정제함수는 `tm` 팩키지를 활용하고,
@@ -159,7 +160,7 @@ removeWords() 함수로 새로 갱신된 사전에 맞춰 불용어를 정리한
 <img src="fig/tm_clean_corpus.png" alt="말뭉치 정제" width="77%" />
 
 
-### 2.4. 단어문서행렬(Term Document Matrix, TDM)
+### 2.4. 단어문서행렬(Term Document Matrix, TDM) {#nlp-r-corpus-tdm}
 
 단어문서행렬을 통한 방법이 일반적으로 많이 사용된다. 이를 위해 입력값이 데이터프레임인 경우 `DataframeSource`,
 벡터인 경우 `VectorSource`를 사용하여 말뭉치(Corpus)로 변환하고, 이를 `TermDocumentMatrix` 함수에 넣어 
@@ -169,14 +170,14 @@ removeWords() 함수로 새로 갱신된 사전에 맞춰 불용어를 정리한
 행렬형태 데이터를 저장하게 되면 고급 통계 분석이 가능하게 된다.
 `DocumentTermMatrix()`는 `TermDocumentMatrix()` 함수로 통해 나온 행렬을 전치(transpose)시킨 것이다.
  
-## 3. 텍스트 데이터 시각화 [^obama-farewell] [^trump-inauguration]
+## 3. 텍스트 데이터 시각화 [^obama-farewell] [^trump-inauguration] {#nlp-r-obama-viz}
 
 [^obama-farewell]: [Full Transcript: President Barack Obama’s farewell speech](http://www.vox.com/policy-and-politics/2017/1/10/14229878/full-transcript-president-barack-obama-farewell-speech)
 [^trump-inauguration]: [Trump inauguration transcript 2017: Read the president full speech and remarks](https://mic.com/articles/166134/trump-inauguration-transcript-2017-read-the-president-s-full-speech-and-remarks#.VLFHVUrTE)
 
 오바마 퇴임 연설문과 트럼프 취임 연설문을 통해 텍스트 데이터를 시각화한다.
 
-### 3.1. 환경설정
+### 3.1. 환경설정 {#nlp-r-obama-setup}
 
 `tm`, `qdap` 텍스트 데이터 전처리를 위한 팩키지를 불러오고, 텍스트 시각화를 위한 `wordcloud`, `plotrix` 팩키지도 가져오고,
 데이터 전처리 함수를 두개 생성한다. 하나는 텍스트 수준에서 텍스트 데이터를 전처리하는 함수로 `qdap`에서 불러오고,
@@ -223,7 +224,7 @@ clean_corpus <- function(corpus){
 }
 ```
 
-### 3.2. 데이터 불러오기
+### 3.2. 데이터 불러오기 {#nlp-r-obama-import}
 
 오바마 퇴임식 연설문과 트럼프 취임식 연설문을 불러온다. 
 
@@ -233,7 +234,7 @@ obama <- readLines("data/obama_farewell.txt", encoding = "UTF-8")
 trump <- readLines("data/trump_inauguration.txt", encoding = "UTF-8")
 ```
 
-### 3.3. 데이터 전처리
+### 3.3. 데이터 전처리 {#nlp-r-obama-preprocess}
 
 텍스트를 넣어 `qdap` 팩키지 전처리 함수를 조합한 `clean_text` 함수를 통해 텍스트 데이터를 정제하고 나서
 말뭉치(Corpus)를 생성시키고 나서 이를 또다시 `clean_corpus` 함수로 정제한다. 그리고 나서, 
@@ -268,7 +269,7 @@ obama_word_freqs <- word_freq(obama_corpus)
 trump_word_freqs <- word_freq(trump_corpus)
 ```
 
-### 3.4. 텍스트 데이터 시각화
+### 3.4. 텍스트 데이터 시각화 {#nlp-r-obama-word-viz}
 
 텍스트 데이터 시각화로 가장 많이 사용되는 단어구름(wordcloud)을 활용하여 
 트럼프 취임 연설문과 오바마 퇴임 연설문을 시각화한다.
@@ -278,7 +279,7 @@ trump_word_freqs <- word_freq(trump_corpus)
 마지막으로 두 연설문의 공통적으로 나타나는 단어만 뽑아 피라미드 그래프를 통해 
 공통적으로 언급하고 있으나 강도에 대한 부분을 시각화한다.
 
-``` {r text-wordcloud-viz, warn=FALSE, message=FALSE}
+``` {r text-wordcloud-viz, warning=FALSE, message=FALSE}
 # 4. 시각화 --------------------------------------------------------------
 ## 4.1. 단어구름----------------------------------------------------------
 par(mfrow=c(1,2))
@@ -325,7 +326,7 @@ plotrix::pyramid.plot(common_words_25$Obama, common_words_25$Trump,
              raxlab = NULL, unit = NULL)
 ```
 
-### 참고문헌 
+## 4. 참고문헌 {#nlp-r-reference}
 
 * [Tyler W. Rinker, qdap-tm Package Compatibility](https://cran.r-project.org/web/packages/qdap/vignettes/tm_package_compatibility.pdf)
 * [Basic Text Mining in R](https://rstudio-pubs-static.s3.amazonaws.com/31867_8236987cf0a8444e962ccd2aec46d9c3.html)
