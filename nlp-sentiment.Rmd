@@ -1,11 +1,10 @@
 ---
 layout: page
-title: xwMOOC 기계학습
+title: xwMOOC 자연어 처리 - 텍스트
 subtitle: 감성분석(Sentiment Analysis) - 깔끔한 텍스트 방식(tidytext)
 output:
   html_document: 
     toc: yes
-    keep_md: yes
   pdf_document:
     latex_engine: xelatex
 mainfont: NanumGothic
