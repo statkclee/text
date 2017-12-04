@@ -1,6 +1,6 @@
 ---
 layout: page
-title: xwMOOC 기계학습
+title: xwMOOC 자연어 처리 - 텍스트
 subtitle: 정규표현식에서 워드2벡(Word2Vec)
 output:
   html_document: 
