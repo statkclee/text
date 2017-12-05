@@ -12,3 +12,4 @@ _site
 twitterOAuth.R
 .httr-oauth
 data/breast-cancer
+data/*.docx
