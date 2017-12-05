@@ -15,6 +15,7 @@ title: 자연어 처리 - 텍스트
 ## 학습목차 
 
 1. **[텍스트 데이터와 저작](https://statkclee.github.io/ds-authoring/)**
+    1. [지프 법칙(Zipf law)](nlp-zipf-law.html)    
 1. **텍스트 데이터 다루기**
     1. [숫자를 문자로 표현](nlp-number-to-text.html)
     1. [stringr을 통해 문자열/텍스트 다루기](nlp-stringr.html)
@@ -28,6 +29,7 @@ title: 자연어 처리 - 텍스트
 1. **감성분석(Sentiment Analysis)**
     1. [감성분석(Sentiment Analysis) - 깔끔한 텍스트 방식(tidytext)](nlp-sentiment.html)
     1. [고객 방문후기 평점 감성분석 - 옐프(Yelp)](nlp-text-sentiment-yelp.html)
+    1. [영어 교과서 감성분석](nlp-english-textbook.html)
 1. **평점 텍스트 데이터**
     1. [텍스트 분류(Text Classification) - 나이브 베이즈(naive bayes)](nlp-text-classification.html)
     1. [영화 평점 - 무비렌즈(MovieLens)](nlp-text-movielens.html)
