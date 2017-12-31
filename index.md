@@ -35,3 +35,5 @@ title: 자연어 처리 - 텍스트
     1. [영화 평점 - 무비렌즈(MovieLens)](nlp-text-movielens.html)
 1. **딥러닝(Deep Learning)**
     1. [정규표현식에서 워드2벡(Word2Vec)](nlp-regex-word2vec.html)
+1. **한국 R Meetup - 류충현**
+    1. [대통령 연설문 데이터 긁어오기](nlp-president-crawl.html)
