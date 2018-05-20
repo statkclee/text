@@ -75,3 +75,50 @@ const_lvl_03 <- flatten(const_lvl_02)
 listviewer::jsonedit(const_lvl_03)
 ```
 
+
+# 헌법 개정이력 {#korea-constitution-history}
+
+최근 문재인 대통령이 발의한 대통령 개정안을 제외한 총 9개 헌법 개정안 데이터가 [GitHub](https://github.com/jkiimm/constitution)에 데이터형태와 웹에서 보기 좋은 형태로 나와있다.
+
+`diffr` 팩키지를 활용하여 각 헌법 개정본간 차이를 보기 편하게 시각화하는 함수를 만들어 비교해보자.
+
+``` {r history-constitution}
+# 0. 환경설정 -----
+library(tidyverse)
+library(diffr)
+library(glue)
+
+# 1. 헌법 개정 이력 비교 함수 -----
+
+get_const <- function(version) {
+  const_url <- glue("https://raw.githubusercontent.com/jkiimm/constitution/master/build/assets/data/", version, "/provision.md")
+  const_resp <- read_lines(const_url)
+  const_resp <- str_replace_all(const_resp, "#", "")
+  return(const_resp)
+}
+
+make_comp <- function(first, second) {
+  file1 <- tempfile() 
+  writeLines(get_const(first), con = file1)
+  file2 <- tempfile() 
+  writeLines(get_const(second), con = file2)
+  diffr(file1, file2, before = glue("헌법: 제", first, "호"), after = glue("헌법: 제", second, "호"))
+}
+```
+
+## 1948년 헌법 vs. 1988년 헌법 {#const-1980-1988}
+
+동일한 방식으로 가장 최근, 30년전 8번째 헌법(1980년)과 첫 헌법(1947년) 비교 가능하다.
+
+```{r constituion-comp-02, fig.width=12, fig.height=20, eval=FALSE}
+make_comp("01", "09")
+```
+
+## 1988년 헌법 vs. 1980년 헌법 {#const-1980-1988}
+
+가장 최근, 30년전 8번째 헌법(1980년)과 9번째 헌법(1988년) 비교해보자.
+
+```{r constituion-comp-01, fig.width=12, fig.height=20}
+make_comp("08", "09")
+```
+
