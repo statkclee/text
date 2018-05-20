@@ -1,0 +1,77 @@
+---
+layout: page
+title: xwMOOC 자연어 처리 - 텍스트
+subtitle: 대한민국 헌법
+output:
+  html_document: 
+    toc: yes
+    toc_float: true
+    highlight: tango
+    code_folding: hide
+    number_sections: TRUE
+---
+ 
+``` {r, include=FALSE}
+source("tools/chunk-options.R")
+knitr::opts_knit$set(verbose = FALSE, echo=FALSE, message=FALSE, warning =FALSE,  fig.margin = TRUE)
+
+library(tidyverse)
+const_lvl_03  <- read_rds("data/const_lvl_03.rds")
+```
+
+# 대한민국 헌법 {#korea-constitution}
+
+[대한민국 헌법](http://www.law.go.kr/lsEfInfoP.do?lsiSeq=61603#)은 국가법령정보센터 웹사이트에서 확인할 수 있다.
+RSelenium으로 웹브라우저를 구동시켜서 [대한민국 헌법](http://www.law.go.kr/lsEfInfoP.do?lsiSeq=61603#) 웹사이트에 접속해서
+헌법 데이터를 가져온다.
+
+``` {r korea-constitution, eval=FALSE}
+# 0. 환경설정 -----
+library(tidyverse)
+library(rvest)
+library(diffr)
+library(RSelenium)
+library(tidyverse)
+
+# 1. 데이터 ----
+## 1.1. 현재 헌법전문 -----
+rem_driver <- rsDriver(browser="chrome")
+remdrv_client <- rem_driver[["client"]]
+
+remdrv_client$navigate("http://www.law.go.kr/lsEfInfoP.do?lsiSeq=61603#")
+```
+
+# 헌법 데이터 {#korea-constitution-crawl}
+
+헌법 전문 `id`를 크롬 검사(inspection) 기능으로 확인하여 `getElementText()` 함수로 
+분석처리 가능한 형태 텍스트 데이터로 가져온다.
+각 장으로 나눠 보기 좋게 하고, 다시 각조로 나눈다.
+그리고, 보기 좋은 형태로 리스트에 이름을 붙어 시각화한다.
+
+``` {r korea-constitution-crawl, eval=FALSE}
+## 1.2. 헌법전문 저장 -----
+const_web_eleml <- remdrv_client$findElement(using = "id", "conScroll")
+const_web_txt <- const_web_eleml$getElementText()[[1]]
+
+# 2. 데이터 정제 ----
+## 2.1. 각장
+const_lvl_01 <- str_split(const_web_txt, "제[0-9]+장|부[\\s]+칙") %>% flatten
+# listviewer::jsonedit(const_lvl_01)
+
+## 2.2. 각조
+const_lvl_02 <- map(const_lvl_01, str_split, pattern="\n 제[0-9]+조")
+
+# names(const_lvl_02[[1]]) <- "전문"
+# names(const_lvl_02[[12]]) <- "부칙"
+
+for(i in 2:11) {
+  const_lvl_02[[i]] <- setNames(const_lvl_02[[i]], const_lvl_02[[i]][[1]][1])
+}
+
+const_lvl_03 <- flatten(const_lvl_02)
+```
+
+```{r korea-constitution-print}
+listviewer::jsonedit(const_lvl_03)
+```
+

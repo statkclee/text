@@ -3,6 +3,8 @@ layout: page
 title: xwMOOC 자연어 처리 - 텍스트
 subtitle: 영어 교과서 감성분석
 output:
+  tufte::tufte_handout: default
+  tufte::tufte_html: default  
   html_document: 
     toc: yes
   pdf_document:
@@ -12,7 +14,7 @@ mainfont: NanumGothic
  
 ``` {r, include=FALSE}
 source("tools/chunk-options.R")
-knitr::opts_knit$set(verbose = FALSE, echo=FALSE, message=FALSE, warning =FALSE)
+knitr::opts_knit$set(verbose = FALSE, echo=FALSE, message=FALSE, warning =FALSE,  fig.margin = TRUE)
 
 # devtools::install_github("richierocks/rebus")
 library(tidyverse)
