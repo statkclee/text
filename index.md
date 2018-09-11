@@ -32,6 +32,7 @@ title: 자연어 처리 - 텍스트
     1. [감성분석(Sentiment Analysis) - 깔끔한 텍스트 방식(tidytext)](nlp-sentiment.html)
     1. [고객 방문후기 평점 감성분석 - 옐프(Yelp)](nlp-text-sentiment-yelp.html)
     1. [영어 교과서 감성분석](nlp-english-textbook.html)
+1. [셜록홈즈 - 단어구름에서 토픽모형](silge-topic-modeling.html) 
 1. **평점 텍스트 데이터**
     1. [텍스트 분류(Text Classification) - 나이브 베이즈(naive bayes)](nlp-text-classification.html)
     1. [영화 평점 - 무비렌즈(MovieLens)](nlp-text-movielens.html)

@@ -1,0 +1,221 @@
+---
+layout: page
+title: 단어구름에서 토픽모형
+subtitle: From World Cloud to Toptic Modeling
+output:
+  html_document: 
+    toc: yes
+    toc_float: true
+    highlight: tango
+    number_section: true
+    code_folding: show
+mainfont: NanumGothic
+editor_options: 
+  chunk_output_type: console
+---
+
+``` {r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
+                    comment="", digits = 3, tidy = FALSE, prompt = TRUE, fig.align = 'center')
+
+```
+
+
+# 셜록홈즈 소설 [^silge-topic-modeling] {#homes-fiction}
+
+[^silge-topic-modeling]: [JULIA SILGE (Jan 25, 2018), "THE GAME IS AFOOT! TOPIC MODELING OF SHERLOCK HOLMES STORIES"](https://juliasilge.com/blog/sherlock-holmes-stm/)
+
+셜록홈즈 소설 데이터를 구텐베르그 프로젝트 웹사이트에서 다운로드 받아 텍스트 데이터 분석을 위해 데이터를 정제하고 단어구름을 통해 탐색적 데이터분석 작업을 수행하고 나서, 이를 TF-IDF로 중요한 단어를 식별하고 이를 토픽모형까지 연결시켜보자.
+
+<iframe width="300" height="180" src="https://www.youtube.com/embed/evTuL-RcRpc" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+
+[Julia Silge 블로그](https://juliasilge.com/blog/sherlock-holmes-stm/)에 내용을 바탕으로 원본 텍스트데이터를 가져와서 이를 `tidytext` 방식으로 토픽모형(topic model)까지 구축하는 과정을 실습한다.
+
+## 텍스트 데이터 {#homes-text-data}
+
+`gutenbergr` 팩키지를 설치하고 나서 셜록홈즈 소설을 다운로드 받는다.
+
+```{r homes-data}
+library(tidyverse)
+library(gutenbergr)
+
+sherlock_raw <- gutenberg_download(1661)
+
+sherlock_raw
+```
+
+## 텍스트 데이터 정제 {#homes-text-data-clean}
+
+### 스토리 단위 구분 {#homes-text-data-clean-step01}
+
+`ADVENTURE`가 포함된 `text`를 기준으로 문장을 스토리 단위로 구분한다.
+그리고 나서 스토리를 요인형 자료로 변환하여 다음 분석을 위한 준비를 한다.
+전체 12개 스토리 단위로 구분됨이 확인된다.
+
+```{r homes-data-clean-story}
+sherlock <- sherlock_raw %>%
+    mutate(story = ifelse(str_detect(text, "ADVENTURE"),
+                          text,
+                          NA)) %>%
+    tidyr::fill(story) %>%
+    filter(story != "THE ADVENTURES OF SHERLOCK HOLMES") %>%
+    mutate(story = factor(story, levels = unique(story)))
+
+sherlock %>% 
+    count(story)
+
+```
+
+### 스토리 &rarr; 단어 {#homes-text-data-clean-word}
+
+스토리를 기준으로 문장단위로 구분을 했으면, 다음 단계로 문장을 단어 단위로 잘라낸다. 이를 위해서 `unnest_tokens()` 함수를 사용한다. 그리고 불용어 사전에 등록된 `stop_words`를 사용해서 불용어를 제거하고 `homes` 단어도 너무 많이 출현되어 이를 제거하여 깔끔한 텍스트 데이터로 정제한다.
+
+```{r homes-data-clean-word}
+library(tidytext)
+
+tidy_sherlock <- sherlock %>%
+    mutate(line = row_number()) %>%
+    unnest_tokens(word, text) %>%
+    anti_join(stop_words) %>%
+    filter(word != "holmes")
+
+tidy_sherlock %>%
+    count(word, sort = TRUE)
+```
+
+# 단어구름 {#homes-fiction-wordcloud}
+
+`wordcloud` 팩키지 wordcloud() 함수로 전체에 대한 출현빈도가 높은 단어로 단어구름을 생성할 수 있다. 
+
+```{r homes-wordcloud}
+library(wordcloud)
+library(ggrepel)
+
+tidy_sherlock %>%
+    count(word, sort = TRUE) %>% 
+    with(wordcloud(word, n, max.words = 100,  min.freq = 1))
+```
+
+`ggplot2`를 사용해서 각 스토리(facet)별로 단어구름을 생성하여 탐색적으로 비교하는 것도 가능하다. [^wordcloud-ggplot2]
+
+[^wordcloud-ggplot2]: [Mhairi's R Blog, "Wordclouds with ggplot2 and ggrepel"](http://mhairihmcneill.com/blog/2016/04/05/wordclouds-in-ggplot.html)
+
+```{r homes-wordcloud-ggplot}
+tidy_sherlock %>% 
+    count(story, word, sort = TRUE) %>% 
+    filter(n > 10) %>% 
+    ggplot(aes(x = 1, y = 1, size = n, label = word)) +
+        geom_text_repel(segment.size = 0, force = 100, segment.color = 'white', segment.alpha = 0.01) +
+        scale_size(range = c(2, 10), guide = FALSE) +
+        scale_y_continuous(breaks = NULL) +
+        scale_x_continuous(breaks = NULL) +
+        labs(x = '', y = '', title = "Word Cloud of the Sherlock Holmes Stories") +
+        facet_wrap(~ story) +
+        # facet_grid(.~ story) +
+        theme_classic() +
+        theme(strip.text = element_text(color="red", size=16, lineheight=5.0),
+              plot.title = element_text(colour = "blue",
+              size = 18, hjust = 0.5, vjust = 0.8, angle = 0)) 
+
+```
+
+
+# 소설 분석 {#homes-fiction-analysis}
+
+## `tf-idf` 단어 {#homes-fiction-analysis-tf-idf}
+
+`tf-idf` 분석을 통해 12개 스토리 중에서 중요한 단어를 추출할 수 있게 도와준다. 많이 출현한다고 해서 중요한 단어가 아니라 상대적으로 중요한 단어를 식별할 수 있게 된다. `tf-idf` 분석은 토픽 모형개발로 진행하기 전에 중요한 역할을 수행하게 된다.
+
+
+```{r homes-tf-idf, fig.width=10, fig.height=8}
+# devtools::install_github("dgrtwo/drlib")
+library(drlib)
+
+sherlock_tf_idf <- tidy_sherlock %>%
+    count(story, word, sort = TRUE) %>%
+    bind_tf_idf(word, story, n) %>%
+    arrange(-tf_idf) %>%
+    group_by(story) %>%
+    top_n(10) %>%
+    ungroup
+
+sherlock_tf_idf %>%
+    mutate(word = reorder_within(word, tf_idf, story)) %>%
+    ggplot(aes(word, tf_idf, fill = story)) +
+    geom_col(alpha = 0.8, show.legend = FALSE) +
+    facet_wrap(~ story, scales = "free", ncol = 3) +
+    scale_x_reordered() +
+    coord_flip() +
+    theme(strip.text=element_text(size=11)) +
+    labs(x = NULL, y = "tf-idf",
+         title = "Highest tf-idf words in Sherlock Holmes short stories",
+         subtitle = "Individual stories focus on different characters and narrative elements")
+```
+
+
+## 토픽 모형 {#homes-fiction-analysis-topic-modeling}
+
+`tf-idf` 분석을 이어 토픽 모형으로 진행하는데 팩키지가 필요한데 과거 속도, 자바 의존성이 문제가 되어 번거러웠으나, [`stm`](https://github.com/bstewart/stm) 팩키지의 등장으로 C++로 작성되어 자바 의존성과 속도 문제가 모두 해결되고 전문가들의 평판도 좋다. 
+
+`stm()`함수는 인자로 문서-단어 행렬(document-term matrix) 혹은 `quanteda` 팩키지 
+희소 행렬(sparse matrix) 혹은 `dfm` 자료형을 전달하여야 한다.
+깔끔한 텍스트 데이터로 정제된 것을 문서(스토리)-단어 행렬로 `count()`, `cast_dfm()` 함수를 연결하여 구현해낸다.
+동일하게 `count()`, `cast_sparse()` 함수를 연결하여 희소행렬도 구현할 수 있다.
+
+
+```{r homes-topic-model}
+library(quanteda)
+library(stm)
+
+sherlock_dfm <- tidy_sherlock %>%
+    count(story, word, sort = TRUE) %>%
+    cast_dfm(story, word, n)
+
+sherlock_sparse <- tidy_sherlock %>%
+    count(story, word, sort = TRUE) %>%
+    cast_sparse(story, word, n)
+```
+
+`stm()` 함수에 토픽을 6개(`K = 6`)로 정하여 토픽모형 결과를 객체에 전달하면 
+`summary(topic_model)`을 통해서 결과를 확인할 수 있으나, 
+후속 데이터 분석을 위해서 `tidy()` 함수로 데이터를 변환하고 나서 파이프 연산자를 결합하여 후속 분석 작업을 매끄럽게 진행한다.
+
+```{r homes-topic-model-implementation}
+topic_model <- stm(sherlock_dfm, K = 6, 
+                   verbose = FALSE, init.type = "Spectral")
+
+td_beta <- tidy(topic_model)
+
+td_beta %>%
+    group_by(topic) %>%
+    top_n(10, beta) %>%
+    ungroup() %>%
+    mutate(topic = paste0("Topic ", topic),
+           term = reorder_within(term, beta, topic)) %>%
+    ggplot(aes(term, beta, fill = as.factor(topic))) +
+    geom_col(alpha = 0.8, show.legend = FALSE) +
+    facet_wrap(~ topic, scales = "free_y") +
+    coord_flip() +
+    scale_x_reordered() +
+    labs(x = NULL, y = expression(beta),
+         title = "Highest word probabilities for each topic",
+         subtitle = "Different words are associated with different topics")
+```
+
+다음으로 각 토픽별로 각 문서가 생성될 확률을 시각화해보자. 토픽 모형결과 산출된 결과값을 통해 가능하다.
+
+```{r homes-topic-model-implementation-prob}
+td_gamma <- tidy(topic_model, matrix = "gamma",                    
+                 document_names = rownames(sherlock_dfm))
+
+td_gamma %>% filter(topic == 5, gamma > 0.5)
+
+ggplot(td_gamma, aes(gamma, fill = as.factor(topic))) +
+  geom_histogram(alpha = 0.8, show.legend = FALSE) +
+  facet_wrap(~ topic, ncol = 3) +
+  labs(title = "Distribution of document probabilities for each topic",
+       subtitle = "Each topic is associated with 1-3 stories",
+       y = "Number of stories", x = expression(gamma))
+```
+
+
