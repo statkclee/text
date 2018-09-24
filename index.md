@@ -22,6 +22,7 @@ title: 자연어 처리 - 텍스트
     1. [stringr을 통해 문자열/텍스트 다루기](nlp-stringr.html)
     1. [텍스트 데이터 수집 및 단어문서행렬(TDM) -- 트위터](nlp-text-twitter.html)
 1. [단어주머니(Bag of Words)](nlp-bag-of-words.html)
+    1. [아마존 vs. 구글](nlp-amazon-google.html)
     1. [해외연극 등장인물 출현횟수](nlp-movie-play.html)
     1. [국내영화(건축학 개론) 등장인물 출현횟수](nlp-movie-arch101.html)
     1. [소설 텍스트 데이터 분석 -- 소나기](nlp-text-basic.html)
