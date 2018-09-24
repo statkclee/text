@@ -16,9 +16,8 @@ title: 자연어 처리 - 텍스트
 
 1. **[텍스트 데이터와 저작](https://statkclee.github.io/ds-authoring/)**
     1. [지프 법칙(Zipf law) - 시군 인구](nlp-zipf-law.html)    
-1. **텍스트 데이터 가져오기**
-    1. [대한민국 헌법](text-constitution.html)
 1. **텍스트 데이터 다루기**
+    1. [대한민국 헌법](text-constitution.html)
     1. [숫자를 문자로 표현](nlp-number-to-text.html)
     1. [stringr을 통해 문자열/텍스트 다루기](nlp-stringr.html)
     1. [텍스트 데이터 수집 및 단어문서행렬(TDM) -- 트위터](nlp-text-twitter.html)
