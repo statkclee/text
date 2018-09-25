@@ -39,6 +39,6 @@ title: 자연어 처리 - 텍스트
 1. **딥러닝(Deep Learning)**
     1. [SMS 스팸분류 - Random Forest](nlp-spam-machine-learning.html)
     1. [정규표현식에서 워드2벡(Word2Vec)](nlp-regex-word2vec.html)
-1. **한국 R Meetup - 류충현**
-    1. [대통령 연설문 - 데이터 긁어오기](nlp-president-crawl.html)
-    1. [대통령 연설문 - DTM 만들기](nlp-president-dtm.html)
+1. **한국어**
+    1. **한국어 R Meetup - 류충현**: [대통령 연설문 - 데이터 긁어오기](nlp-president-crawl.html), [대통령 연설문 - DTM 만들기](nlp-president-dtm.html)
+    1. [네이버 뉴스](nlp-naver-news.html)

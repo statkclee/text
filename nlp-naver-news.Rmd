@@ -1,0 +1,186 @@
+---
+layout: page
+title: xwMOOC 자연어 처리 - 텍스트
+subtitle: 네이버 뉴스
+output:
+  html_document: 
+    toc: yes
+    toc_float: true
+    highlight: tango
+    code_folding: show
+    number_section: true
+    self_contained: true
+    lib_dir: gapminder
+editor_options: 
+  chunk_output_type: console
+---
+ 
+``` {r, include=FALSE}
+# source("tools/chunk-options.R")
+
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
+                    comment="", digits = 3, tidy = FALSE, prompt = TRUE, fig.align = 'center')
+
+library(here)
+
+```
+
+# 네이버 뉴스 [^dongguk-web-text] {#naver-news}
+
+[^dongguk-web-text]: [Jinseog Kim(2018), "웹에서 텍스트 자료의 수집",Dongguk University](http://datamining.dongguk.ac.kr/lecture_select.php?lid=201813&y=2018&s=1)
+
+[네이버 검색](https://search.naver.com/search.naver?sm=tab_hty.top&where=news&query=%EB%8D%B0%EC%9D%B4%ED%84%B0%EA%B3%BC%ED%95%99&oquery=%EB%B9%85%EB%8D%B0%EC%9D%B4%ED%84%B0&tqi=TIFTdlpVuEGssa9GW7lssssssxs-243322)에 "데이터과학"을 검색어로 넣어 관련 뉴스를 100개 가져오는 뉴스 크롤러를 작성한다. 그리고 나서 `purrr` 팩키지 `map2_df` 함수로 데이터프레임으로 깔끔하게 가져온다.
+
+```{r naver-news-crawler}
+# 0. 환경설정 -----
+library(tidyverse)
+library(rvest)
+library(glue)
+
+# 1. 데이터 긁어오기 -----
+## 네이버 뉴스 함수 작성
+get_naver_news <- function(keyword, page){
+  
+  url <- glue("https://search.naver.com/search.naver?&where=news&query=",keyword,"&sm=tab_pge&sort=0&photo=0&field=0&reporter_article=&pd=1&ds=2018.02.25&de=2018.03.04&docid=&nso=so:r,p:1w,a:all&mynews=0&cluster_rank=38&start=", page,"&refresh_start=0")
+  
+  news_html <- read_html(url, handle = curl::new_handle("useragent" = "Mozilla/5.0"))
+  title     <- html_nodes(news_html, xpath='//*[@class="type01"]/li/dl/dt/a') %>% html_text
+  source   <- html_nodes(news_html, xpath='//*[@class="type01"]/li/dl/dd[1]/span[1]') %>% html_text
+  text  <- html_nodes(news_html, xpath='//*[@class="type01"]/li/dl/dd[2]') %>%  html_text
+
+  news_df <- data.frame(title, source, text)
+  return(news_df)
+}
+
+page_list <- 1:10
+keyword_list <- rep("데이터과학", 10)
+
+ds_df <- map2_df(keyword_list, page_list, get_naver_news)
+
+DT::datatable(ds_df)
+
+```
+
+
+# 뉴스 전처리 [^mrpark-kospacing] [^kospacing-install-issue] {#naver-news-preprocessing}
+
+[^mrpark-kospacing]: [KoSpacing, "한글 띄어쓰기 패키지를 사용해보자"](https://mrchypark.github.io/post/kospacing-한글-띄어쓰기-패키지를-사용해보자/)
+
+[^kospacing-install-issue]: [package install error on windows #3](https://github.com/haven-jeon/KoSpacing/issues/3)
+
+뉴스 본문에 나와 있는 `contents` 필드에 대해서 전처리 작업을 수행한다. 대표적인 한글관련 전처리 작업은
+띄어쓰기, 특수문자 및 숫자 제거, 불용어 제거 등을 들 수 있다.
+
+- 띄어쓰기: [HMM](http://freesearch.pe.kr/archives/2746), [KoSpacing](http://freesearch.pe.kr/archives/4759)
+    * 윈도우에서 KoSpacing 팩키지를 설치하는 것은 딥러닝 관련 다 그렇지만 그렇게 권장하지 않는다.
+- 특수문자 및 숫자 제거
+- 불용어 제거 
+
+## 띄어쓰기 {#naver-news-preprocessing-spacing}
+
+`KoSpacing` 팩키지 `spacing()` 함수를 활용하여 띄어쓰기를 수행하여 뉴스 데이터가 원래 깔끔하게 정제되어 있지만, 사람이 하는 것이라 주관이 들어갈 수도 있고 확인하는 과정이라고 생각하고 수행하자.
+
+```{r naver-news-preprocessing}
+# KoSpacing 관련 팩키지 설치
+# library(installr) # install.packages('installr')
+# install.conda()
+
+# reticulate::conda_version()
+# reticulate::conda_list()
+
+# devtools::install_github('haven-jeon/KoSpacing')
+# library(KoSpacing)
+```
+
+
+## 특수문자 및 숫자 제거 {#naver-news-preprocessing-escape}
+
+
+```{r naver-news-preprocessing-escape}
+library(tm)
+# tm 텍스트 정제
+tm_clean <- function(corpus) {
+  corpus <- tm_map(corpus, removePunctuation)
+  corpus <- tm_map(corpus, stripWhitespace)
+  corpus <- tm_map(corpus, removeWords, 
+                   c(stopwords("en"), "데이터과학"))
+  return(corpus)
+}
+
+ds_df$tm_corpus <- tm_clean(VCorpus(VectorSource(ds_df$text)))
+
+```
+
+## 명사추출 {#naver-news-preprocessing-escape}
+
+명사 추출을 위해서 먼저 "데이터사이언스"와 같은 단어를 추가로 등록한다. 그리고 사전을 새로 갱신다.
+
+```{r naver-news-preprocessing-dictionary}
+library(KoNLP)
+library(NIADic) # devtools::install_github('haven-jeon/NIADic/NIADic', build_vignettes = TRUE)
+
+new_term <- c("데이터사이언스", "매일경제", "빅데이터")
+new_dic <- data.frame(new_term , "ncn")
+buildDictionary(ext_dic = c('sejong', 'woorimalsam', 'insighter'), user_dic = new_dic)
+
+useNIADic()
+```
+
+명사 추출을 위해 준비된 사전을 바탕으로 명사를 추출한다.
+
+```{r naver-news-preprocessing-noun}
+
+ds_df$tm_text <- unlist(sapply(ds_df$tm_corpus, `[`, "content"))
+
+ds_noun_df <- ds_df %>% 
+  select(-tm_corpus) %>% 
+  mutate(ds_news_noun = map(tm_text, extractNoun))
+
+DT::datatable(ds_noun_df)
+
+```
+
+# 탐색적 데이터 분석 {#naver-news-preprocessing-EDA}
+
+```{r naver-news-EDA}
+ds_eda_df <- ds_noun_df %>% 
+  filter(source %in% c("국제뉴스", "전자신문"))
+
+library(quanteda)
+
+ds_kj_df <- ds_eda_df %>% filter(source == "국제뉴스")
+ds_kj_m <- dfm(ds_kj_df$tm_text) %>% as.matrix
+
+ds_elec_df <- ds_eda_df %>% filter(source == "전자신문")
+ds_elec_m <- dfm(ds_elec_df$tm_text) %>% as.matrix
+
+
+ds_kj_freq   <- colSums(ds_kj_m)
+ds_elec_freq <- colSums(ds_elec_m)
+
+kj_g <- ds_kj_freq %>% 
+    as.data.frame() %>% 
+    rownames_to_column(var="word") %>% 
+    rename(frequency = '.') %>% 
+    arrange(desc(frequency)) %>% 
+    top_n(15, frequency) %>% 
+    ggplot(aes(x=fct_reorder(word, frequency), y=frequency)) +
+      geom_col() +
+      coord_flip() +
+      labs(x="", y="단어 빈도", title="국제뉴스 데이터 과학 단어 빈도")
+
+elec_g <- ds_elec_freq %>% 
+    as.data.frame() %>% 
+    rownames_to_column(var="word") %>% 
+    rename(frequency = '.') %>% 
+    arrange(desc(frequency)) %>% 
+    top_n(15, frequency) %>% 
+    ggplot(aes(x=fct_reorder(word, frequency), y=frequency)) +
+      geom_col() +
+      coord_flip() +
+      labs(x="", y="단어 빈도", title="전자신문 데이터 과학 단어 빈도")
+
+cowplot::plot_grid(kj_g, elec_g)
+
+```
+
