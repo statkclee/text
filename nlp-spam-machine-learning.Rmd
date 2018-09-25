@@ -1,0 +1,257 @@
+---
+layout: page
+title: xwMOOC 자연어 처리 - 텍스트
+subtitle: SMS 스팸분류 - Random Forest
+output:
+  html_document: 
+    toc: yes
+    toc_float: true
+    highlight: tango
+    code_folding: show
+    number_section: true
+    self_contained: true
+    lib_dir: gapminder
+editor_options: 
+  chunk_output_type: console
+---
+ 
+``` {r, include=FALSE}
+# source("tools/chunk-options.R")
+
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
+                    comment="", digits = 3, tidy = FALSE, prompt = TRUE, fig.align = 'center')
+
+library(here)
+
+```
+
+
+
+# 캐글 스팸 데이터 [^kaggle-spam-walkthrough] [^tidytext-clean] {#kaggle-spam-data}
+
+[^kaggle-spam-walkthrough]: [Jean Dos "SantosHam or Spam? SMS Text Classification Walkthrough"](https://www.kaggle.com/jeandsantos/ham-or-spam-sms-text-classification-walkthrough)
+
+[^tidytext-clean]: [peterjgensler(Nov 23, 2017), "Functions with R and rvest: A Laymen's Guide"](https://towardsdatascience.com/functions-with-r-and-rvest-a-laymens-guide-acda42325a77)
+
+[SMS Spam Collection Dataset - Collection of SMS messages tagged as spam or legitimate](https://www.kaggle.com/uciml/sms-spam-collection-dataset) 캐글 페이지를 통해 SMS 메시지가 스팸인지 아닌지를 판별하는 기계학습 예측 모형을 개발해보자.
+
+## 데이터 가져오기  {#kaggle-spam-dataset}
+
+캐글 사이트에서 데이터를 다운로드 받아 압축을 푼다. 그리고 나서 데이터 정제작업을 
+스팸인지 아닌지를 나타내는 변수를 지정하고 텍스트 메시지 본문에 `text` 변수명을 부여한다.
+그리고 나서 SMS 텍스트 길이를 `nchar`, `str_length` 함수로 주요 피처로 산출해낸다.
+
+
+```{r kaggle-spam}
+library(tidyverse)
+library(stringi)
+spam_df <- read_csv("data/spam.csv", local = locale(encoding = "latin1"))
+
+spam_df <- spam_df %>% 
+  rename(label = v1, text = v2) %>% 
+  select(label, text) %>% 
+  mutate(label = factor(label, levels=c("ham", "spam")))
+
+# https://stackoverflow.com/questions/14363085/invalid-multibyte-string-in-read-csv
+spam_df <- spam_df %>% 
+  mutate(text_len = str_length(text))
+
+skimr::skim(spam_df)
+```
+
+
+# 탐색적 데이터 분석 [^datascienceplus-sms] {#kaggle-spam-data-feature}
+
+[^datascienceplus-sms]: [Anish Singh Walia(2017), "Text Message Classification"](https://datascienceplus.com/text-message-classification/)
+
+## 스팸여부 변수 {#kaggle-spam-data-feature-label}
+
+스팸은 747개로 약 13.4%를 차지함이 확인된다.
+SMS 텍스트 길이에 따른 스팸과 정상 메시지를 겹쳐 보게 되면 텍스트 길이도 중요한 피쳐가 될 수 있음을 확인하게 된다.
+
+```{r kaggle-sms-feature}
+spam_df %>% 
+  count(label) %>% 
+  mutate(pcnt = scales::percent(n / sum(n)))
+
+ggplot(spam_df, aes(x = text_len, fill = label)) +
+  theme_minimal() +
+  geom_histogram(binwidth = 5, alpha=0.7) +
+  labs(y = "SMS 빈도수", x = "텍스트길이", fill = "SMS구분",
+       title = "스팸여부에 따른 텍스트 길이 분포") +
+  scale_fill_viridis_d() +
+  theme(legend.position = "top")
+
+```
+
+
+# 스팸판별 기계학습 {#kaggle-spam-data-feature-ml}
+
+## 훈련/시험 데이터 분할 {#kaggle-spam-data-feature-ml-split}
+
+`caret` 팩키지로 훈련/시험 데이터를 7:3으로 나눠 데이터를 준비한다.
+
+```{r kaggle-spam-split}
+library(caret)
+index <- createDataPartition(spam_df$label, times = 1, p = 0.7, list = FALSE)
+
+train <- spam_df[index,]
+test  <- spam_df[-index,]
+
+```
+
+## 텍스트 피처 {#kaggle-spam-data-feature-ml-feature}
+
+### 텍스트 데이터 전처리 {#kaggle-spam-data-feature-ml-feature-preprocess}
+
+텍스트 데이터를 기계학습 모형에 사용하려면 토큰화 과정을 거쳐 준비한다.
+이를 위해서 먼저 전처리 과정이 필요한데, 이를 위해서 `qdap` 팩키지를 사용해서 
+텍스트를 전처리한 후에 `quanteda` 팩키지 `token()` 함수의 전처리 기능을 사용해서 토큰화 한다.
+
+그리고 나서 불용어를 제거하고, 어간추출 기법을 사용해서 어간을 뽑아내서 말뭉치를 정제한다.
+
+```{r kaggle-spam-feature-preprocess}
+library(qdap)
+
+qdap_clean <- function(x) {
+  x <- replace_abbreviation(x)
+  x <- replace_contraction(x)
+  x <- replace_number(x)
+  x <- replace_ordinal(x)
+  x <- replace_symbol(x)
+  x <- tolower(x)
+  return(x)
+}
+
+train <- train %>% 
+  mutate(text = qdap_clean(text))
+
+library(quanteda)
+# SMS 메시지 토큰화
+train_tokens <- tokens(train$text, what = "word", 
+                       remove_numbers = TRUE, remove_punct = TRUE,
+                       remove_symbols = TRUE, remove_hyphens = TRUE)
+
+# 불용어 처리
+train_tokens <- tokens_select(train_tokens, stopwords(), 
+                              selection = "remove")
+
+# 어간추출(stemming)
+train_tokens <- tokens_wordstem(train_tokens, language = "english")
+```
+
+
+### 피쳐 생성 {#kaggle-spam-data-feature-ml-featurization}
+
+`quanteda` 팩키지 `dfm()` 함수를 통해 DTM 행렬을 생성하고 나서 이를 행렬로 변환시킨다.
+``
+
+```{r kaggle-spam-featurization}
+## 단어주머니 접근법으로 DTM 행렬로 변환
+train_tokens_dfm <- dfm(train_tokens, tolower = FALSE)
+train_tokens_m <- as.matrix(train_tokens_dfm)
+```
+
+가장 먼저 스팸과 정상 메시지에 가장 출현빈도가 높은 단어를 추출하여 단어구름(wordcloud)을 제작하여 비교한다.
+
+```{r kaggle-spam-wordcloud-ham-spam}
+library(wordcloud)
+train_tokens_df <- train_tokens_m %>% 
+  tbl_df %>% 
+  bind_cols(label = train$label)
+
+train_tokens_spam_freq <- train_tokens_df %>% 
+  filter(label == "spam") %>% 
+  select(-label) %>% 
+  colSums(.)
+
+train_tokens_ham_freq <- train_tokens_df %>% 
+  filter(label == "ham") %>% 
+  select(-label) %>% 
+  colSums(.)
+
+par(mfrow=c(1,2))
+wordcloud(names(train_tokens_spam_freq), train_tokens_spam_freq, min.freq=10, color = "red")
+wordcloud(names(train_tokens_ham_freq), train_tokens_ham_freq, min.freq=10, color = "blue")
+
+```
+
+## 나이브 베이즈 적합 [^quanteda-nb] {#kaggle-spam-nb-fit}
+
+[^quanteda-nb]: [quanteda, "NAIVE BAYES CLASSIFIER"](https://tutorials.quanteda.io/machine-learning/nb/)
+
+나이브 베이즈 모형 적합을 하기 전에 단어 빈도수가 적은 것은 뽑아낸다.
+그리고 TF-IDF를 계산해서 이를 스팸 예측을 위한 피쳐로 사용한다.
+
+추가 피처(text_len)을 추가하여 `quanteda` 팩키지 `textmodel_nb`에 넣어 모형을 적합시킨다.
+그리고 모형성능 예측은 `caret` 팩키지 `confusionMatrix()` 함수를 사용한다.
+
+```{r kaggle-spam-nb-fit}
+# library(klaR)  # caret 나이브베이즈 
+train_tokens_dfm <- dfm_trim(train_tokens_dfm, min_termfreq = 5)  
+train_tokens_idf <- dfm_tfidf(train_tokens_dfm) 
+
+## 예측모형 행렬
+train_x_df <- cbind(train$text_len, train_tokens_idf)
+
+## 나이브베이즈 모형 적합
+spam_nb <- textmodel_nb(train_x_df, train$label)
+
+## 훈련데이터 예측모형 성능
+train_pred <- predict(spam_nb, train_x_df)
+nb_pred_train_tbl <- table(predicted = train_pred, actual=train$label)
+
+confusionMatrix(nb_pred_train_tbl, mode = "everything", positive = "spam")
+```
+
+# 스팸예측 성능 {#kaggle-spam-nb-fit}
+
+시험데이터를 통해 스팸성능 예측을 해야 스팸예측 모형의 과적합이 방지되어 일반화가 가능한지 파악할 수 있다.
+이를 위해서 나이브베이즈 예측모형에 입력값으로 대입된 데이터 형태를 동일하게 유지해야 한다.
+
+1. `qdap` 팩키지 텍스트 데이터 전처리 수행
+1. `quandeta` 팩키지 토큰화 과정
+1. 불용어 처리 및 어간 추출 작업
+1. 토큰을 단어주머니(Bag-of-Words) DTM 변환
+1. **dfm_select()** 함수로 훈련데이터와 동일한 DTM이 되도록 작업
+1. TF-IDF 변환
+1. 텍스트 길이(`text_len`) 피처 추가
+
+그리고 나서 `predict` 함수로 시험데이터 예측을 하고 `confusionMatrix`로 성능을 평가한다.
+SMS 스팸여부를 예측하는데 민감도와 특이도, 그리고 정확도 모두 99%에 근접하여 만족도가 높게 나오고 있다.
+
+
+```{r kaggle-spam-nb-test}
+test <- test %>% 
+  mutate(text = qdap_clean(text))
+# SMS 메시지 토큰화
+test_tokens <- tokens(test$text, what = "word", 
+                       remove_numbers = TRUE, remove_punct = TRUE,
+                       remove_symbols = TRUE, remove_hyphens = TRUE)
+
+# 불용어 처리
+test_tokens <- tokens_select(test_tokens, stopwords(), 
+                              selection = "remove")
+
+# 어간추출(stemming)
+test_tokens <- tokens_wordstem(test_tokens, language = "english")
+
+# 단어주머니 DTM 변환
+test_tokens_dfm <- dfm(test_tokens, tolower = FALSE)
+
+# 단어주머니 DTM 변환
+test_tokens_dfm <- dfm_select(test_tokens_dfm, train_tokens_dfm)
+# TF-IDF 변환
+test_tokens_idf <- dfm_tfidf(test_tokens_dfm) 
+
+# 시험데이터 준비
+test_x_df <- cbind(test$text_len, test_tokens_idf)
+
+# 시험데이터 예측
+predicted_class <- predict(spam_nb, test_x_df)
+
+# 성능평가
+nb_pred_test_tbl <- table(predicted = predicted_class, actual=test$label)
+confusionMatrix(nb_pred_test_tbl, mode = "everything", positive = "spam")
+```
+
