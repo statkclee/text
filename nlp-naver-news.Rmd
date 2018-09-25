@@ -89,12 +89,15 @@ DT::datatable(ds_df)
 # reticulate::conda_list()
 
 # devtools::install_github('haven-jeon/KoSpacing')
-# library(KoSpacing)
+library(KoSpacing)
+ds_df$text <- spacing(ds_df$text)
 ```
 
 
-## 특수문자 및 숫자 제거 {#naver-news-preprocessing-escape}
+## 특수문자 제거 {#naver-news-preprocessing-escape}
 
+특수문자 제거를 위해서 tm 팩키지 기능을 사용하기로 한다.
+이를 위해서 먼저 텍스트를 말뭉치(Corpus)로 변환시키고 데이터프레임에 저장한다.
 
 ```{r naver-news-preprocessing-escape}
 library(tm)
@@ -113,11 +116,18 @@ ds_df$tm_corpus <- tm_clean(VCorpus(VectorSource(ds_df$text)))
 
 ## 명사추출 {#naver-news-preprocessing-escape}
 
-명사 추출을 위해서 먼저 "데이터사이언스"와 같은 단어를 추가로 등록한다. 그리고 사전을 새로 갱신다.
+명사 추출을 위해서 먼저 "데이터사이언스", "매일경제", "빅데이터"와 같은 단어를 추가로 등록한다. 그리고 사전을 새로 갱신다.
 
 ```{r naver-news-preprocessing-dictionary}
+Sys.setenv(JAVA_HOME='/Library/Java/JavaVirtualMachines/jdk1.8.0_111.jdk/Contents/Home/jre')
+Sys.getenv("JAVA_HOME")
+
+
+library(rJava)
 library(KoNLP)
 library(NIADic) # devtools::install_github('haven-jeon/NIADic/NIADic', build_vignettes = TRUE)
+
+
 
 new_term <- c("데이터사이언스", "매일경제", "빅데이터")
 new_dic <- data.frame(new_term , "ncn")
@@ -134,7 +144,7 @@ ds_df$tm_text <- unlist(sapply(ds_df$tm_corpus, `[`, "content"))
 
 ds_noun_df <- ds_df %>% 
   select(-tm_corpus) %>% 
-  mutate(ds_news_noun = map(tm_text, extractNoun))
+  mutate(ds_news_noun = map(text, extractNoun) %>% paste0(., collapse=","))
 
 DT::datatable(ds_noun_df)
 
@@ -142,17 +152,18 @@ DT::datatable(ds_noun_df)
 
 # 탐색적 데이터 분석 {#naver-news-preprocessing-EDA}
 
+KoSpace 를 통해 띄어쓰기로 정리된 문장에서 명사를 추출한 결과를 국제뉴스와 전자신문에 많이 출현된 단어를 기준으로 시각화를 한다.
+
 ```{r naver-news-EDA}
+library(quanteda)
 ds_eda_df <- ds_noun_df %>% 
   filter(source %in% c("국제뉴스", "전자신문"))
 
-library(quanteda)
-
 ds_kj_df <- ds_eda_df %>% filter(source == "국제뉴스")
-ds_kj_m <- dfm(ds_kj_df$tm_text) %>% as.matrix
+ds_kj_m <- dfm(ds_kj_df$ds_news_noun) %>% as.matrix
 
 ds_elec_df <- ds_eda_df %>% filter(source == "전자신문")
-ds_elec_m <- dfm(ds_elec_df$tm_text) %>% as.matrix
+ds_elec_m <- dfm(ds_elec_df$ds_news_noun) %>% as.matrix
 
 
 ds_kj_freq   <- colSums(ds_kj_m)
