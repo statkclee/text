@@ -42,3 +42,4 @@ title: 자연어 처리 - 텍스트
 1. **한국어**
     1. **한국어 R Meetup - 류충현**: [대통령 연설문 - 데이터 긁어오기](nlp-president-crawl.html), [대통령 연설문 - DTM 만들기](nlp-president-dtm.html)
     1. [네이버 뉴스](nlp-naver-news.html)
+    1. [네이버 뉴스 - RmecabKo (형태소 분석)](nlp-naver-news-mecab.html)

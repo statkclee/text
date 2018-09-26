@@ -119,7 +119,9 @@ ds_df$tm_corpus <- tm_clean(VCorpus(VectorSource(ds_df$text)))
 명사 추출을 위해서 먼저 "데이터사이언스", "매일경제", "빅데이터"와 같은 단어를 추가로 등록한다. 그리고 사전을 새로 갱신다.
 
 ```{r naver-news-preprocessing-dictionary}
-Sys.setenv(JAVA_HOME='/Library/Java/JavaVirtualMachines/jdk1.8.0_111.jdk/Contents/Home/jre')
+# Sys.setenv(JAVA_HOME='C:/Program Files (x86)/Java/jre1.8.0_181')
+Sys.setenv(JAVA_HOME='C:/Program Files/Java/jre1.8.0_181')
+
 Sys.getenv("JAVA_HOME")
 
 

@@ -1,0 +1,208 @@
+---
+layout: page
+title: xwMOOC 자연어 처리 - 텍스트
+subtitle: 네이버 뉴스 - RmecabKo (형태소 분석)
+output:
+  html_document: 
+    toc: yes
+    toc_float: true
+    highlight: tango
+    code_folding: show
+    number_section: true
+    self_contained: true
+    lib_dir: gapminder
+editor_options: 
+  chunk_output_type: console
+---
+ 
+``` {r, include=FALSE}
+# source("tools/chunk-options.R")
+
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
+                    comment="", digits = 3, tidy = FALSE, prompt = FALSE, fig.align = 'center')
+
+library(here)
+
+```
+
+# 네이버 뉴스 [^dongguk-web-text] {#naver-news}
+
+[^dongguk-web-text]: [Jinseog Kim(2018), "웹에서 텍스트 자료의 수집",Dongguk University](http://datamining.dongguk.ac.kr/lecture_select.php?lid=201813&y=2018&s=1)
+
+[네이버 검색](https://search.naver.com/search.naver?sm=tab_hty.top&where=news&query=%EB%8D%B0%EC%9D%B4%ED%84%B0%EA%B3%BC%ED%95%99&oquery=%EB%B9%85%EB%8D%B0%EC%9D%B4%ED%84%B0&tqi=TIFTdlpVuEGssa9GW7lssssssxs-243322)에 "데이터과학"을 검색어로 넣어 관련 뉴스를 100개 가져오는 뉴스 크롤러를 작성한다. 그리고 나서 `purrr` 팩키지 `map2_df` 함수로 데이터프레임으로 깔끔하게 가져온다.
+
+```{r naver-news-crawler}
+# 0. 환경설정 -----
+library(tidyverse)
+library(rvest)
+library(glue)
+
+# 1. 데이터 긁어오기 -----
+## 네이버 뉴스 함수 작성
+get_naver_news <- function(keyword, page){
+  
+  url <- glue("https://search.naver.com/search.naver?&where=news&query=",keyword,"&sm=tab_pge&sort=0&photo=0&field=0&reporter_article=&pd=1&ds=2018.02.25&de=2018.03.04&docid=&nso=so:r,p:1w,a:all&mynews=0&cluster_rank=38&start=", page,"&refresh_start=0")
+  
+  news_html <- read_html(url, handle = curl::new_handle("useragent" = "Mozilla/5.0"))
+  title     <- html_nodes(news_html, xpath='//*[@class="type01"]/li/dl/dt/a') %>% html_text
+  source   <- html_nodes(news_html, xpath='//*[@class="type01"]/li/dl/dd[1]/span[1]') %>% html_text
+  text  <- html_nodes(news_html, xpath='//*[@class="type01"]/li/dl/dd[2]') %>%  html_text
+
+  news_df <- data.frame(title, source, text)
+  return(news_df)
+}
+
+page_list <- 1:10
+keyword_list <- rep("빅데이터", 10)
+
+ds_df <- map2_df(keyword_list, page_list, get_naver_news)
+
+DT::datatable(ds_df)
+
+```
+
+
+# 뉴스 전처리 [^mrpark-kospacing] [^kospacing-install-issue] {#naver-news-preprocessing}
+
+[^mrpark-kospacing]: [KoSpacing, "한글 띄어쓰기 패키지를 사용해보자"](https://mrchypark.github.io/post/kospacing-한글-띄어쓰기-패키지를-사용해보자/)
+
+[^kospacing-install-issue]: [package install error on windows #3](https://github.com/haven-jeon/KoSpacing/issues/3)
+
+뉴스 본문에 나와 있는 `contents` 필드에 대해서 전처리 작업을 수행한다. 대표적인 한글관련 전처리 작업은
+띄어쓰기, 특수문자 및 숫자 제거, 불용어 제거 등을 들 수 있다.
+
+- 띄어쓰기: [HMM](http://freesearch.pe.kr/archives/2746), [KoSpacing](http://freesearch.pe.kr/archives/4759)
+    * 윈도우에서 KoSpacing 팩키지를 설치하는 것은 딥러닝 관련 다 그렇지만 그렇게 권장하지 않는다.
+- 특수문자 및 숫자 제거
+- 불용어 제거 
+
+## 띄어쓰기 {#naver-news-preprocessing-spacing}
+
+`KoSpacing` 팩키지 `spacing()` 함수를 활용하여 띄어쓰기를 수행하여 뉴스 데이터가 원래 깔끔하게 정제되어 있지만, 사람이 하는 것이라 주관이 들어갈 수도 있고 확인하는 과정이라고 생각하고 수행하자.
+
+```{r naver-news-preprocessing}
+# KoSpacing 관련 팩키지 설치
+# library(installr) # install.packages('installr')
+# install.conda()
+
+# reticulate::conda_version()
+# reticulate::conda_list()
+
+# devtools::install_github('haven-jeon/KoSpacing')
+library(KoSpacing)
+ds_df$text <- spacing(ds_df$text) %>% unlist
+```
+
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 10px;}
+</style>
+<div class = "blue">
+
+**`system(cmd)에서 경고가 발생했습니다 :  'make' not found` 오류**
+
+```{r rmecab-install-error, eval = FALSE}
+> devtools::install_github("junhewk/RmecabKo")
+Downloading GitHub repo junhewk/RmecabKo@master
+from URL https://api.github.com/repos/junhewk/RmecabKo/zipball/master
+WARNING: Rtools is required to build R packages, but no version of Rtools compatible with R 3.5.1 was found. (Only the following incompatible version(s) of Rtools were found:3.5)
+
+Please download and install the appropriate version of Rtools from http://cran.r-project.org/bin/windows/Rtools/.
+Installing RmecabKo
+"C:/PROGRA~1/R/R-35~1.1/bin/x64/R" --no-site-file --no-environ --no-save --no-restore --quiet CMD INSTALL  \
+  "C:/Users/xxxxx/AppData/Local/Temp/RtmpU7SNRk/devtools4220392273bb/junhewk-RmecabKo-ccace6b" --library="C:/Users/victor/Documents/R/win-library/3.5" --install-tests 
+
+* installing *source* package 'RmecabKo' ...
+** libs
+
+*** arch - i386
+system(cmd)에서 경고가 발생했습니다 :  'make' not found
+ERROR: compilation failed for package 'RmecabKo'
+* removing 'C:/Users/xxxxx/Documents/R/win-library/3.5/RmecabKo'
+In R CMD INSTALL
+Installation failed: Command failed (1)
+
+> library(devtools)
+> assignInNamespace("version_info", c(devtools:::version_info, list("3.5" = list(version_min = "3.3.0", version_max = "99.99.99", path = "bin"))), "devtools")
+> find_rtools()
+TRUE
+```
+
+</div>
+
+## 형태소 분석 {#naver-news-preprocessing-morpheme}
+
+형태소 분석을 위해서 먼저 특수문자를 제거하고 별도 필드(`clean_text`)로 저장한다.
+`RecabKo` 팩키지의 `pos()` 품사 태그 표[^pos-table]를 참조하여 관련 한글을 추출한다.
+
+일본 NTT에 개발한 `Mecab`은 일본어 형태소 분석기로 은전한닢 프로젝트는 Mecab을 한국어에 사용할 수 있도록 개선, 발전시킨 라이브러리로 
+형태소 분석 기능을 제공하는 은전한닢 프로젝트(mecab-ko)에 R wrapper로 제작한 것이 `RecabKo` 팩키지가 되고,
+Mecab의 특성상 띄어쓰기가 틀려도 형태소 분석이 잘 되고 Rcpp를 통해 작성하여 속도가 빠르게 개선시킨 것이 `RcppMeCab` 팩키지다.
+
+[^pos-table]: [한글 형태소 품사 (Part Of Speech, POS) 태그표 : 한글 형태소의 품사를 '체언, 용언, 관형사, 부사, 감탄사, 조사, 어미, 접사, 어근, 부호, 한글 이외'와 같이 나누고 각 세부 품사를 구분한다.](http://kkma.snu.ac.kr/documents/index.jsp?doc=postag)
+
+```{r naver-news-preprocessing-morpheme}
+# install.packages("RcppMeCab")
+library(RmecabKo)
+ds_df <- ds_df %>% 
+  mutate(clean_text = str_replace_all(text, "[[:punct:]]", "")) %>% 
+  tbl_df
+```
+
+형태소 분석을 위해 `pos` 함수를 사용해서 각 문서에 형태소 분석을 수행하고 명사만을 추출한다.
+
+```{r naver-news-preprocessing-morpheme-pos}
+ds_df <- ds_df %>% 
+  mutate(text_pos = pos(clean_text))
+
+ds_noun_df <- ds_df %>% 
+  select(source, text_pos) %>% 
+  unnest(text_pos) %>% 
+  filter(str_detect(text_pos, "/NNG")) %>% 
+  mutate(text_no_pos = str_replace_all(text_pos, "/NNG", ""))
+
+ds_noun_df %>% 
+  DT::datatable()
+
+```
+
+# 뉴스기사 기술분석 {#naver-news-preprocessing-morpheme-text}
+
+## 빅데이터 관련 고빈도 단어 {#naver-news-preprocessing-morpheme-text-big}
+
+형태소 분석을 끝낸 후에 주요 언론사를 추출하여 각 언론사마다 "빅데이터" 관련하여 많이 사용한 단어가 뭔지 추출해 낸다.
+
+```{r naver-news-preprocessing-morpheme-pos-freq}
+ds_noun_df %>% 
+  count(text_no_pos, sort=TRUE)  %>% 
+  filter(!text_no_pos %in% c("데이터", "빅", "빅데이터")) %>% 
+  top_n(15) %>% 
+  ggplot(aes(x=fct_reorder(text_no_pos, n), y=n)) +
+    geom_col() +
+    theme_bw() +
+    coord_flip() +
+    labs(x="", y="단어출현 빈도수")
+```
+
+
+## 빅데이터 관련 두 언론사 {#naver-news-preprocessing-morpheme-text-two}
+
+빅데이터 관련 기사수가 많은 "블록체인밸리", 그리고 "연합뉴스"를 대상으로 어떤 단어가 많이 사용되었는지 비교해보자.
+
+```{r two-company-comparison}
+top_df <- ds_noun_df %>% 
+  filter(source %in% c("블록체인밸리", "연합뉴스")) %>% 
+  count(source, text_no_pos, sort=TRUE)  %>% 
+  filter(!text_no_pos %in% c("데이터", "빅", "빅데이터")) %>% 
+  spread(source, n, fill =0) %>% 
+  mutate(`차이` = abs(`블록체인밸리` - `연합뉴스`)) %>% 
+  top_n(15, `차이`)
+
+library(plotrix)
+pyramid.plot(top_df$블록체인밸리, top_df$연합뉴스, 
+             labels = top_df$text_no_pos, 
+             gap = 12, 
+             top.labels = c("블록체인밸리", "공통어", "연합뉴스"), 
+             main = "빅데이터기사 공통사용 단어", unit = NULL)
+```
+
