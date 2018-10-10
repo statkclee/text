@@ -1,0 +1,138 @@
+---
+layout: page
+title: xwMOOC 자연어 처리 - 텍스트
+subtitle: R 파이썬을 만나다.
+date: "`r Sys.Date()`"
+output:
+  html_document: 
+    toc: yes
+    toc_float: true
+    highlight: tango
+    code_folding: show
+    number_section: true
+    self_contained: true
+    lib_dir: gapminder
+editor_options: 
+  chunk_output_type: console
+---
+ 
+``` {r, include=FALSE}
+# source("tools/chunk-options.R")
+
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
+                    comment="", digits = 3, tidy = FALSE, prompt = FALSE, fig.align = 'center')
+
+library(here)
+
+```
+
+
+# 파이썬 개발환경 [^python-install-error] {#r-python-environment}
+
+[^python-install-error]: [파이썬(PYTHON) JPYPE 설치시 에러](http://needjarvis.tistory.com/224)
+
+konlpy(파이썬 한국어 형태소 분석기)를 호출하기 위해 필요한 jpype라는 라이브러리를 설치하는 도중에 오류가 발생한 경우 다음과 같이 대처한다.
+
+1. `pip3 install --upgrade setuptools`
+1. [Visual Studio 2017](https://visualstudio.microsoft.com/ko/downloads/)를 설치한다. 
+    - 특히, "Windows Universal CRT SDK" 모듈을 잊지 않고 설치한다. [^stackoverflow-ms-visual]
+1. `pip3 install konlpy` 명령어로 `konlpy` 라이브러리를 설치한다.
+
+[^stackoverflow-ms-visual]: [stackoverflow, "Cannot find corecrt.h: $(UniversalCRT_IncludePath) is wrong"](https://stackoverflow.com/questions/38290169/cannot-find-corecrt-h-universalcrt-includepath-is-wrong)    
+
+Visual Studio가 깔끔하게 깔리게 되면 빨간색 오류없이 깔끔하게 설치가 된다.
+
+```{r konlpy-install-ok, eval=FALSE}
+$ pip3 install konlpy
+Collecting konlpy
+  Using cached https://files.pythonhosted.org/packages/e5/3d/4e983cd98d87b50b2ab0387d73fa946f745aa8164e8888a71
+4d5129f9765/konlpy-0.5.1-py2.py3-none-any.whl
+Collecting JPype1>=0.5.7 (from konlpy)
+  Using cached https://files.pythonhosted.org/packages/c4/4b/60a3e63d51714d4d7ef1b1efdf84315d118a0a80a5b085bb5
+2a7e2428cdc/JPype1-0.6.3.tar.gz
+Building wheels for collected packages: JPype1
+  Running setup.py bdist_wheel for JPype1 ... done
+  Stored in directory: C:\Users\chongmu\AppData\Local\pip\Cache\wheels\0e\2b\e8\c0b818ac4b3d35104d35e48cdc7afe
+27fc06ea277feed2831a
+Successfully built JPype1
+Installing collected packages: JPype1, konlpy
+Successfully installed JPype1-0.6.3 konlpy-0.5.1
+```
+
+# RStudio 환경 {#r-python-environment}
+
+[RStudio Team(2018-10-09), "RStudio 1.2 Preview: Reticulated Python"](https://blog.rstudio.com/2018/10/09/rstudio-1-2-preview-reticulated-python/)에서 [reticulate](https://rstudio.github.io/reticulate/) 팩키지를 [RStudio v1.2](https://www.rstudio.com/products/rstudio/download/preview/)에서 기능을 대폭 강화하여 RStudio IDE에서 파이썬 개발이 용이해졌다.
+
+`reticulate::repl_python()` 명령어를 던지면 기존 콘솔 프롬프트가 `>`에서 `>>>` 갈매기 세마리로 변해서 "컨트롤 + 엔터" 키를 치면 파이썬 코드 한줄 한줄 콘솔창에 던져 인터랙티브하게 파이썬 코드를 실행할 수 있게 된다.
+
+# 한나눔 형태소 분석 [^konlp-morph-hello-world] {#r-python-environment}
+
+[^konlp-morph-hello-world]: [Incredible.AI (Dec 28, 2016), "한글 NLP with Python"](http://incredible.ai/nlp/2016/12/28/NLP/)
+
+한글 텍스트 분석을 위해서 가자 먼저 형태소 분석을 수행하기 위해서 `Mecab`등 형태소 분석기 설치는 차치하고 성능이 나름 좋게 나오는 한나눔, 꼬꼬마 형태소 분석기를 대상으로 간단한 텍스트 분석을 파이썬으로 실행해 보자.
+
+```{python rstudio-dev}
+# 콘솔창 R에서 파이썬 변환
+# reticulate::repl_python()
+
+# KoNLPY 라이브러리
+from konlpy.tag import Kkma, Hannanum, Komoran, Mecab, Twitter
+
+# 형태소 분석기 생성자
+hannanum = Hannanum()
+# twitter = Twitter()
+# mecab = Mecab()
+# kkma = Kkma()
+# komoran = Komoran()
+
+# 문장을 형태소로 변환
+morph_list = hannanum.morphs('@챗봇 내일 판매율 예측해서 Anderson한테 이메일로 보내줘.')
+print(morph_list)
+
+# 품사 POS(Part of Speech) 태그
+pos_list = hannanum.pos('@챗봇 내일 판매율 예측해서 Anderson한테 이메일로 보내줘.')
+print(pos_list)
+
+# 단어추출
+noun_list = hannanum.nouns('철학은 기술을 만들고 기술은 문화를 만든다')
+print(noun_list)
+```
+
+
+# 한국어 텍스트 파일 [^python-text-lucy] {#r-python-korean-text}
+
+[^python-text-lucy]: [박은정(Fri 10 April 2015), "파이썬으로 영어와 한국어 텍스트 다루기"](https://www.lucypark.kr/courses/2015-dm/text-mining.html)
+
+
+```{r text-file-for-korean}
+library(rvest)
+library(tidyverse)
+
+bill_url <- "http://pokr.kr/bill/1809890/text"
+
+bill_txt <- bill_url %>% 
+  read_html() %>% 
+  html_nodes(xpath='//*[@id="bill-sections"]/pre') %>% 
+  html_text() %>% 
+  str_replace_all(., "\n", "")
+
+bill_txt %>% write_lines("data/bill_txt.txt")
+
+```
+
+```{python text-file-for-korean-python}
+
+# repl_python()
+# -*- coding:utf-8 -
+
+bill_py = open("data/bill_txt.txt", encoding='utf8')
+bill_py_txt = bill_py.read()
+
+
+from konlpy.tag import Hannanum; 
+# 형태소 분석기 생성자
+ko = Hannanum()
+
+tokens_ko = ko.morphs(bill_py_txt)
+
+```
