@@ -1,0 +1,76 @@
+---
+layout: page
+title: xwMOOC 자연어 처리 - 텍스트
+subtitle: 데이터과학 - 파이썬 자료구조
+date: "`r Sys.Date()`"
+output:
+  html_document: 
+    toc: yes
+    toc_float: true
+    highlight: tango
+    code_folding: show
+    number_section: true
+    self_contained: true
+    lib_dir: gapminder
+editor_options: 
+  chunk_output_type: console
+---
+ 
+``` {r, include=FALSE}
+# source("tools/chunk-options.R")
+
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
+                    comment="", digits = 3, tidy = FALSE, prompt = FALSE, fig.align = 'center')
+
+library(reticulate)
+# repl_python()
+```
+
+
+# 파이썬 자료구조 
+
+데이터 과학을 위해서 R과 파이썬을 함께 사용하는 경우가 빈번해지고 있다.
+R과 파이썬 사이 자료구조를 잘 이해하는 것이 중요하다. 파이썬에서 흔히 언급되는 자료구조는 다음과 같다.
+
+- 리스트(List)
+- 튜플(Tubple)
+- 집합(Set)
+- 딕셔너리(Dictionary)
+
+데이터 과학 관점에서 리스트, 튜플, 집합, 딕셔너리를 각각 살펴보자.
+
+# 리스트(List) {#python-list}
+
+## 리스트 생성/추가 {#python-list-create}
+
+`[]`꺾쇠를 사용해서 `cheeses` 리스트를 생성한다. 그리고 리스트 객체에 `.extend` 메쏘드를 사용해서 치즈를 더 추가할 수 있다.
+
+```{python python-datatype-list}
+reticulate::repl_python()
+cheeses = ['Cheddar', 'Edam', 'Gouda']
+cheeses.extend(['Mozzarella', 'Roquefort'])
+print(cheeses)
+```
+
+## 리스트 삭제 {#python-list-delete}
+
+리스트를 생성해서 추가했다면, `.index()` 메쏘드를 통해서 위치를 찾아낼 수 있고, `.pop()`메쏘드를 통해서 삭제할 수 있다. 
+
+```{python python-datatype-list}
+# 색인 위치 파악
+position = cheeses.index('Mozzarella')
+
+# 치즈 리스트에서 해당 치즈 삭제
+cheeses.pop(position)
+print(cheeses)
+```
+
+
+```{r}
+library(tidyverse)
+library(babynames) # devtools::install_github("hadley/babynames")
+
+```
+
+
+

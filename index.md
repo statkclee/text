@@ -44,3 +44,4 @@ title: 자연어 처리 - 텍스트
     1. [네이버 뉴스](nlp-naver-news.html)
     1. [네이버 뉴스 - RmecabKo (형태소 분석)](nlp-naver-news-mecab.html)
 1. **[R 파이썬을 만나다.](text-r-meet-python.html)**
+    1. **[데이터과학 - 파이썬 자료구조](text-python-datatype.html)**
