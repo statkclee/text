@@ -163,7 +163,18 @@ cloth_tidy_ngram %>%
 ```
 
 
-# 예측모형 {#data-dictionary-tidytext-document-predictive-model}
+# 예측모형 [^text-glm] {#data-dictionary-tidytext-document-predictive-model}
+
+[^text-glm]: [Pablo Barbera(October 17, 2018), "Supervised machine learning"](http://pablobarbera.com/text-analysis-vienna/code/05-supervised-learning.html)
+
+텍스트 데이터에 대한 탐색적 데이터분석과 비지도 학습 모형에 대한 검토가 끝났다면 다음 단계로 옷추천에 대한 예측모형을 구축하는 것이다. 이를 위해서 `tidytext`, `quanteda`, `tidymodels` 3가지 도구가 시장에 나와 있다. 
+
+- [Julia Silge and David Robinson (2018-09-23), "Text Mining with R - A Tidy Approach"](https://www.tidytextmining.com/)
+- [quanteda: Quantitative Analysis of Textual Data](http://quanteda.io/)
+- [tidyrecipes - Extra recipes for Text Processing](https://github.com/tidymodels/textrecipes)
+
+<img src="fig/text_predictive_model.png" alt="예측모형" width="100%" />
+
 
 ```{r ecommerce-clothing--tidytext-caret, eval = FALSE}
 library(doSNOW)
