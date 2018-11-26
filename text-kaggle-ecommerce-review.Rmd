@@ -83,7 +83,7 @@ cloth_df <- cloth_dat %>%
   mutate(review_id = row_number())
 
 cloth_text_df <- cloth_df %>% 
-  select(y, review_id, review)
+  select(review_id, review)
 
 cloth_text_df %>% 
   sample_n(10) %>% 
@@ -103,64 +103,148 @@ library(tidytext)
 cloth_tidytext_df <- cloth_text_df %>% 
   unnest_tokens(word, review) %>% 
   anti_join(get_stopwords(source = "smart"))
+
+cloth_tidytext_df %>% 
+  sample_n(100) %>% 
+  DT::datatable()
+
 ```
 
-# 추천 비추천 감성분석 {#data-dictionary-preprocessing-tidytext-sentiment}
+# 텍스트 기술통계량 {#data-dictionary-descriptive-stat}
+
+## 추천 비추천 감성분석 {#data-dictionary-preprocessing-tidytext-sentiment}
+
+### 추천 비추천 고빈도 단어 {#data-dictionary-preprocessing-tidytext-sentiment-recomm}
+
+추천과 비추천에 많이 사용된 단어를 상위 10개 뽑아 비교한다.
+
+```{r ecommerce-clothing-tidytext-sentiment-recomm}
+cloth_df %>% 
+  select(review_id, y) %>% 
+  left_join(cloth_tidytext_df) %>% 
+    count(word, y, sort=TRUE) %>%
+    group_by(y) %>% 
+    top_n(10, wt=n) %>% 
+    ungroup() %>%
+    ggplot(aes(x = fct_reorder(word, n), y=n, fill=y)) +
+      geom_col() +
+      coord_flip() +
+      facet_wrap(~y, scales = "free") +
+      labs(x="", y="") +
+      scale_y_continuous(labels = scales::comma)
+```
+
+### 긍부정 감성 고빈도 단어 {#data-dictionary-preprocessing-tidytext-sentiment-recomm}
 
 옷추천과 비추천을 감성분석과 연계하여 추천에 활용된 긍정적인 단어와 비추천에 활용도가 높은 단어 빈도수를 비교한다.
 
 ```{r ecommerce-clothing--tidytext-sentiment}
 cloth_tidytext_df %>% 
   inner_join(get_sentiments("bing")) %>% 
-  count(y, word, sentiment, sort=TRUE) %>%
-  group_by(y, sentiment) %>% 
+  count(word, sentiment, sort=TRUE) %>%
+  group_by(sentiment) %>% 
   top_n(10, wt=n) %>% 
   ungroup() %>% 
   ggplot(aes(x=reorder(word,n), y=n, fill=sentiment)) +
     geom_col() +
     coord_flip() +
-    facet_wrap(~y, scales = "free") +
+    facet_wrap(~sentiment, scales = "free") +
     labs(x="", y="") +
     scale_y_continuous(labels = scales::comma)
 ```
 
+리뷰에 나타난 전체를 파악하는 대신에, 
+추천과 비추천 리뷰에 동원된 감성어도 각기 나눠 살펴볼 수 있다.
+이를 위해서 `review_id`를 추천여부와 결합하여 감성분석결과와 결합하여 구분필드로 활용한다.
 
-# 추천 비추천 단어 - `tf-idf`  {#data-dictionary-preprocessing-tidytext-document}
+```{r ecommerce-clothing-tidytext-sentiment}
+cloth_df %>% 
+  select(review_id, y) %>% 
+  left_join(cloth_tidytext_df) %>% 
+    inner_join(get_sentiments("bing")) %>% 
+    count(y, word, sentiment, sort=TRUE) %>%
+    group_by(y, sentiment) %>% 
+    top_n(10, wt=n) %>% 
+    ungroup() %>% 
+    ggplot(aes(x=fct_reorder(word, n), y=n, fill=sentiment)) +
+      geom_col() +
+      coord_flip() +
+      facet_wrap(~y+sentiment, scales = "free") +
+      labs(x="", y="") +
+      scale_y_continuous(labels = scales::comma)
+```
+
+
+# 리뷰 중요단어 - `tf-idf`  {#data-dictionary-preprocessing-tidytext-document}
 
 `tf-idf`는 옷리뷰에 대한 추천과 비추천 분석에 대한 중요지표가 된다.
 `bind_tf_idf()` 함수로 추천과 비추천 리뷰에 대한 중요단어를 추출하여 막대그래프로 시각화한다.
 
-```{r ecommerce-clothing--tidytext-document}
+```{r ecommerce-clothing-tidytext-document}
+## 리뷰 전체 단어숫자
+review_words <- cloth_tidytext_df %>%
+  count(review_id, word, sort = TRUE)
+
+total_review_words <- review_words %>%
+ group_by(review_id) %>%
+ summarize(total = sum(n)) 
+
+## 리뷰 TF-IDF
 cloth_tidytext_tfidf <- cloth_tidytext_df %>% 
-  count(y, review_id, word) %>% 
+  count(review_id, word) %>% 
+  left_join(total_review_words) %>% 
   bind_tf_idf(word, review_id, n) 
 
-
 cloth_tidytext_tfidf %>% 
-  group_by(y) %>% 
-  top_n(10) %>% 
-  ungroup() %>% 
+  top_n(100, wt=tf_idf) %>% 
+  arrange(desc(tf_idf)) %>% 
+  DT::datatable() %>% 
+    DT::formatRound(c(5:7), digits=3)
+```
+
+`cloth_df` 에서 추천/비추천 필드(`y`)를 결합해서 앞서 계산한 `tf_idf`와 결합하여 해당 리뷰에서는 자주 나타나고, 전체 리뷰에는 적게 나타나는 단어를, 추천/비추천과 결합하여 중요한 단어를 식별해 낸다. 
+
+```{r ecommerce-clothing-tidytext-tfidf-viz}
+cloth_df %>% 
+  select(review_id, y) %>% 
+  left_join(cloth_tidytext_tfidf) %>% 
+    group_by(y) %>% 
+    top_n(10, wt=tf_idf) %>% 
+    ungroup() %>% 
   ggplot(aes(fct_reorder(word, tf_idf), tf_idf, fill = y)) +
     geom_col(show.legend = FALSE) +
     coord_flip() +
     facet_wrap(~y, scales = "free") +
     theme_minimal() +
     labs(x="")
-
 ```
 
 # 단어 연관성 - `ngram` {#data-dictionary-tidytext-document-ngram}
 
-```{r ecommerce-clothing--tidytext-ngram}
-cloth_tidy_ngram <- cloth_text_df %>% 
+## 단어 연관성 - `tf-idf` {#data-dictionary-tidytext-document-ngram-tf-idf}
+
+`token = "ngrams"`을 활용하여 `n = 2`로 지정하여 `bigram` 두단어 토큰을 생성하고 앞선 `unigram` 토근을 활용한 것과 동일한 방식으로 리뷰를 분석한다. `tf_idf`를 계산하여 추천/비추천에 활용된 `bigram` 두 단어를 식별해보자.
+
+```{r ecommerce-clothing-tidytext-bigram-tf-idf}
+cloth_tidy_bigram <- cloth_text_df %>% 
   unnest_tokens(bigram, review, token = "ngrams", n = 2)
 
-cloth_tidy_ngram %>% 
+cloth_tidy_bigram_filtered <- cloth_tidy_bigram %>% 
   separate(bigram, c("word1", "word2"), sep=" ") %>% 
   filter(!word1 %in% stop_words$word,
          !word2 %in% stop_words$word) %>% 
-  count(word1, word2, sort=TRUE)
+  unite(bigram, word1, word2, sep = " ")
+
+cloth_tidy_ngram_tfidf <- cloth_tidy_bigram_filtered %>% 
+  count(review_id, bigram, sort=TRUE) %>% 
+  bind_tf_idf(bigram, review_id, n)
+
+cloth_tidy_ngram_tfidf
 ```
+
+## 단어 연관성 - 감성분석 {#data-dictionary-tidytext-document-ngram-sentiment}
+
+## 단어 연관성 - 그래프(`ggraph`) {#data-dictionary-tidytext-document-ngram-sentiment}
 
 
 # 예측모형 [^text-glm] {#data-dictionary-tidytext-document-predictive-model}
