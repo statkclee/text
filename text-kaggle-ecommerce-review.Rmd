@@ -64,7 +64,7 @@ cloth_dat <- read_csv("data/Womens Clothing E-Commerce Reviews.csv")
 즉, 텍스트는 별도로 빼서 **DTM**을 만들어 결합시킨다. 
 텍스트 Feature를 모형설계행렬로 반영한 후 예측모형 알고리즘을 돌려 예측모형 정확도를 향상시킨다.
 
-<!-- <img src="fig/kaggle-cloth-review.png" alt="텍스트" width="100%" /> -->
+<img src="fig/text-review-framework.png" alt="텍스트" width="100%" />
 
 
 ```{r ecommerce-clothing-datasets-preprocessing-text}

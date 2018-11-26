@@ -1,0 +1,111 @@
+---
+layout: page
+title: 자연어 처리 - 텍스트
+subtitle: "텍스트 데이터"
+author:
+    name: xwMOOC
+    url: https://www.facebook.com/groups/tidyverse/
+    affiliation: Tidyverse Korea
+date: "`r Sys.Date()`"
+output:
+  html_document: 
+    toc: yes
+    toc_float: true
+    highlight: tango
+    code_folding: show
+    number_section: true
+    self_contained: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE,
+                      comment="", digits = 3, tidy = FALSE, prompt = FALSE, fig.align = 'center')
+
+```
+
+
+# 데이터 과학자 데이터 유형 [^kaggle-survey] [^python-nlp] {#data-scientist-type}
+
+[^kaggle-survey]: [Kaggle 설문조사 "2017 The State of Data Science & Machine Learning"](https://www.kaggle.com/surveys/2017)
+
+[^python-nlp]: [김용범 (Nov 22, 2018), "메이크챗봇 자연어기초", 무영인터내쇼날](https://www.slideshare.net/YBkim2/ss-123697052?fbclid=IwAR0TGvUCGtOjzrWRff2j8qbnwK71AdpTx_YZDqhMsBlylu2zEauR1FhRARs)
+
+데이터 과학자가 다루는 프로그래밍 언어와 별개로 다루는 원천 데이터 유형은 직사각형 데이터프레임 데이터와 
+텍스트 데이터가 과반을 넘게 차지하고 있다. 기타 데이터에는 지리정보, 네트워크 등 데이터가 포함된다.
+
+
+|  원천 데이터   | 응답모수 | 응답자 | 비율 |
+|----------------|--------|-------|---------|
+| 관계형 데이터 | 8,024  | 5,256  | 65.50 % |
+| 텍스트 데이터 | 8,024  | 4,255  | 53.02 % |
+| 이미지 데이터 | 8,024  | 1,456  | 18.14 % |
+| 기타          | 8,024  |   823  | 10.25 % |
+| 비디오 데이터 | 8,024  |   409  |  5.09 % |
+
+**관계형 데이터(Relational data)**는 데이터 과학자가 주로 다루는 엑셀형태의 데이터로 [데이터 과학](https://statkclee.github.io/data-science/)
+텍스트 데이터는 [자연어 처리 - 텍스트](https://statkclee.github.io/text/)를 참조하고, 
+이미지 데이터는 [xwMOOC 고생대 프로젝트 -고생대 삼엽충의 전성기를 재현](https://statkclee.github.io/trilobite/)를 참조한다.
+
+# 자연어 처리 [^lovit-nlp] {#data-scientist-nlp}
+
+[^lovit-nlp]: [LOVIT x DATA SCIENCE (2018-04-01) "Part of speech tagging, Tokenization, and Out of vocabulary problem"](https://lovit.github.io/nlp/2018/04/01/pos_and_oov/)
+
+과거 모델링은 전문적인 훈련을 받은 전문가의 영역이었는데 
+오픈 소프트웨어의 출현으로 중요하기는 하지만 과거에 비해서 핵심적인 영역이라기 보다는 
+누구나 일정 훈련을 받게 되면 일정수준 이상의 성능을 발현할 수 있고,
+오히려 Feature Engineering을 포함한 전처리 분야와 이를 해석하고 결과를 활용하는 분야가 떠오르고 있다.
+자연어는 기존 관계형 데이터, 이미지, 음성과는 다른 특징을 내재하고 있다.
+
+텍스트 데이터 분석을 위하여 문장을 단어나 토큰으로 분리합니다. 
+텍스트 분석의 단위는 단어, 구문, 문장, 문단, 문서가 될 수 있고, 
+문서나 문장을 분리된 토큰을 이용하여 `tf` 나 `tfidf` 와 같은 **one hot representation**과 `doc2vec` 과 같은 **distributed representation**의 벡터로 표현합니다. 
+연관어 분석이나 **토픽 모델링(topic modeling)**은 문장에서 나뉘어진 단어의 co-occurrence 정보를 이용합니다. 
+결국, 이들은 모두 모두 문장을 단어나 토큰으로 잘 분리되었다는 전제를 바탕으로 깔고 있습니다.
+
+1. 형태론(Morphology) : 단어와 형태소를 연구
+1. 통사론(syntax) : 문법적 구조분석(Parsing)
+1. 의미론(Senmantics) : 뉘앙스, 톤, 의도(긍/부정) 등 단어 의미차이를 연구
+1. 음운론(Phonology) : 음성인식 등 말소리를 연구
+1. 추리론(Reasoning) : 전문용어, 세대별 용어 등 도메인 특성을 연구
+
+
+**토크나이징(tokenization)**은 주어진 문장을 토큰(tokens)으로 나누는 과정입니다. 
+**품사 판별 (part of speech tagging)**은 토큰을 (단어, 품사)로 정의합니다.
+한국어의 품사 체계는 5언 9품사로 구성되어 있습니다. 
+다른 단어들은 형태가 변하지 않지만 동사, 형용사인 용언은 형태가 변하고,
+이를 **"용언의 활용"** 이라 합니다. 
+이때 의미를 지니는 부분을 어근 (root), 형태가 변하는 부분을 어미(ending)이라 합니다.
+
+|  (5)언  |      (9) 품사      |
+|---------|--------------------|
+| 체언    | 명사, 대명사, 수사 |
+| 수식언  | 관형사, 부사       |
+| 관계언  | 조사               |
+| 독립언  | 감탄사             |
+| 용언    | 동사, 형용사       |
+
+
+**불용어(Stop words)**는 연관성이 낮은 단어들을 제외하고 텍스트를 분석하는데 사전과 같이 활용된다.
+내용과 목적에 따라서 불용어는 별도로 정의하고, 
+불용어 처리여부 및 해당 목적에 맞는 불용어 말뭉치 데이터베이스를 구축하여 반영한다.
+
+**형태소 분석은(morphological analysis)** 품사 판별과 자주 혼동되는 개념입니다. 
+형태소란 의미를 지니는 최소 단위로, (1) 자립형태소 / 의존형태소 로 나뉘기도 하며, 
+(2) 실질형태소와 형식형태소로 나뉘기도 합니다. 
+형태소 분석은 품사 판별의 수단이 될 수 있지만 반드시 품사 판별을 위하여 형태소 분석을 해야하는 것은 아닙니다.
+형태소 분석기의 목표는 단어를 형태소로 분해하는 것으로 대표적인 한국어 형태소 분석기에는 다음이 존재합니다.
+
+- 형태소 분석기 
+    - Mecab: mecab-ko 형태소 분석기
+    - KKMA : 꼬꼬마 형태소 분석기 (Kind Korean Moorpheme Analyzer), 서울대 이상구 교수 연구실
+    - Hannanum : 한나눔 형태소 분석기, 카이스트 최기선 교수 연구실
+    - Twitter : 트위터 한국어 처리기, OpenKoreanText 오픈 소스 한국어 처리기
+    - Eunjeon : 은전한닢 프로젝트 (윈도우 미지원) [링크]
+    - KOMORAN : 코모란 한국어 형태소 분석기, Junsoo Shin님의 코모란 v3.3.3
+    - 빠른 분석이 중요할 때 : 트위터
+    - 정확한 품사 정보가 필요할 때 : 꼬꼬마
+    - 정확성, 시간 모두 중요할 때 : 코모란
+
+
