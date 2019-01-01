@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="generator" content="pandoc">
+    <title>Software Carpentry: 재보선 2019 선거</title>
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap.css" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap-theme.css" />
+    <link rel="stylesheet" type="text/css" href="css/swc.css" />
+    <link rel="alternate" type="application/rss+xml" title="Software Carpentry Blog" href="http://software-carpentry.org/feed.xml"/>
+    <meta charset="UTF-8" />
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="https://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+    
+      ga('create', 'UA-59802572-17', 'auto');
+      ga('send', 'pageview');
+    
+    </script>
+  </head>
+  <body class="lesson">
+    <div class="container card">
+      <div class="banner">
+        <a href="http://software-carpentry.org" title="Software Carpentry">
+          <img alt="Software Carpentry banner" src="img/software-carpentry-banner.png" />
+        </a>
+      </div>
+      <article>
+      <div class="row">
+        <div class="col-md-10 col-md-offset-1">
+                    <a href="index.html"><h1 class="title">재보선 2019 선거</h1></a>
+          <h2 class="subtitle">유튜브</h2>
+          <h1 id="nlp-youtube-comment">댓글 텍스트 데이터 처리 흐름</h1>
+<p><a href="https://developers.google.com/youtube/v3/getting-started">유튜브 API</a>에서 직접 유튜브 데이터를 가져오는 대신에 <a href="https://github.com/soodoku/tuber"><code>tuber</code></a> 팩키지를 통해서 쉽게 R로 데이터를 바로 가져올 수 있다. 이를 위해서 <code>yt_oauth(&quot;app_id&quot;, &quot;app_password&quot;)</code> 함수에 넣을 “app_id”, “app_password”를 설정하는 과정은 <a href="http://statkclee.github.io/politics/google-sns.html">데이터 과학자가 바라본 제7회 지방선거, 구글 - 유튜브, 트렌드</a>을 참조한다.</p>
+<p><img src="fig/youtube_text.png" alt="유튜브 댓글 분석" width="100%" /></p>
+<h1 id="youtube-channel-info">유튜브 채널 정보</h1>
+<p>유튜브 채널이 대표적인 국민과 소통하는 방송매체로 자리잡아가고 있다. <a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> 주요 정당별 유튜브 채널은 다음과 같다.</p>
+<ul>
+<li>주요 정당별 유튜브 채널
+<ul>
+<li><a href="https://www.youtube.com/channel/UCfmicRK2-WdZMVQDrfcitLA">TV홍카콜라</a></li>
+<li><a href="https://www.youtube.com/channel/UCoQD2xsqwzJA93PTIYERokg">민주당 씀</a></li>
+<li><a href="https://www.youtube.com/channel/UCHzxtmQhWwhFajAhtgfumKg">바른미래당</a></li>
+<li><a href="https://www.youtube.com/channel/UC4KdOy46f0HCJBqTiq7MLPg">정의당TV</a></li>
+</ul></li>
+</ul>
+<h2 id="youtube-channel-import">유튜브 채널 데이터 가져오기</h2>
+<p><code>get_yt_stat()</code> 사용자 정의함수를 다음과 같이 작성할 수도 있으나, <code>get_all_channel_video_stats()</code> 함수가 <code>tuber</code> 팩키지에서 지원되고 있다.</p>
+<ol style="list-style-type: decimal">
+<li><code>yt_oauth()</code> 함수로 인증을 거친다.</li>
+<li><code>yt_channel</code> 채널 리스트로 웹사이트에서 찾아 정리한다.</li>
+<li>함수형 프로그래밍을 활용하여 <code>for</code> 루프 대신 간결하게 데이터를 가져온다.
+<ul>
+<li>채널통계: <code>get_channel_stats()</code></li>
+<li>동영상통계: <code>get_all_channel_video_stats()</code> 혹은 사용자 정의 함수 <code>get_yt_stat()</code></li>
+</ul></li>
+</ol>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(tuber)
+<span class="kw">library</span>(tidyverse)
+
+<span class="kw">yt_oauth</span>(yt_app_id, yt_app_pw)
+
+yt_channel &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="st">&quot;TV홍카콜라&quot;</span> =<span class="st"> &quot;UCfmicRK2-WdZMVQDrfcitLA&quot;</span>,
+                   <span class="st">&quot;민주당씀&quot;</span>   =<span class="st"> &quot;UCoQD2xsqwzJA93PTIYERokg&quot;</span>,
+                   <span class="st">&quot;정의당TV&quot;</span>   =<span class="st"> &quot;UC4KdOy46f0HCJBqTiq7MLPg&quot;</span>)
+
+<span class="co"># 1. 데이터 가져오기 -----</span>
+## 1.1 유튜브 채널 통계 -----
+yt_channel_tbl &lt;-<span class="st"> </span><span class="kw">tibble</span>(<span class="dt">channel=</span> <span class="kw">names</span>(yt_channel), <span class="dt">stat =</span><span class="ot">NA</span>)
+ 
+yt_channel_tbl &lt;-<span class="st"> </span>yt_channel_tbl <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">stat =</span> <span class="kw">map</span>(yt_channel, <span class="op">~</span><span class="kw">get_channel_stats</span>(.x))) <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="st">`</span><span class="dt">구독자</span><span class="st">`</span> =<span class="st"> </span><span class="kw">map_chr</span>(stat, <span class="op">~</span>.x<span class="op">$</span>statistics<span class="op">$</span>subscriberCount) <span class="op">%&gt;%</span><span class="st"> </span>as.integer,
+         <span class="st">`</span><span class="dt">조회수</span><span class="st">`</span> =<span class="st"> </span><span class="kw">map_chr</span>(stat, <span class="op">~</span>.x<span class="op">$</span>statistics<span class="op">$</span>viewCount) <span class="op">%&gt;%</span><span class="st"> </span>as.integer,
+         <span class="st">`</span><span class="dt">동영상수</span><span class="st">`</span> =<span class="st"> </span><span class="kw">map_chr</span>(stat, <span class="op">~</span>.x<span class="op">$</span>statistics<span class="op">$</span>videoCount) <span class="op">%&gt;%</span><span class="st"> </span>as.integer) <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">select</span>(<span class="op">-</span>stat)
+
+yt_channel_tbl <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">write_rds</span>(<span class="st">&quot;data/yt_channel_tbl.rds&quot;</span>)
+
+## 1.2 사용자 정의 유튜브 동영상 통계 추출함수 -----
+get_yt_stat &lt;-<span class="st"> </span><span class="cf">function</span>(yt_id) {
+  <span class="co"># 1. 채널 리스트</span>
+  yt_list &lt;-<span class="st"> </span><span class="kw">list_channel_resources</span>(<span class="dt">filter =</span> <span class="kw">c</span>(<span class="dt">channel_id =</span> yt_id))
+  
+  <span class="co"># 2. 채널의 재생목록</span>
+  yt_playlist_id &lt;-<span class="st"> </span>yt_list<span class="op">$</span>items[[<span class="dv">1</span>]]<span class="op">$</span>contentDetails<span class="op">$</span>relatedPlaylists<span class="op">$</span>uploads
+  
+  <span class="co"># 3. 비디오 ID</span>
+  yt_vids &lt;-<span class="st"> </span><span class="kw">get_playlist_items</span>(<span class="dt">filter=</span> <span class="kw">c</span>(<span class="dt">playlist_id=</span>yt_playlist_id)) 
+  yt_vid_ids &lt;-<span class="st"> </span><span class="kw">as.vector</span>(yt_vids<span class="op">$</span>contentDetails.videoId)
+  
+  <span class="co"># 동영상 활동성 통계 가져오기</span>
+  yt_stat_df &lt;-<span class="st"> </span><span class="kw">map_df</span>(yt_vid_ids, get_stats)
+  
+  <span class="kw">return</span>(yt_stat_df)
+}
+
+## 1.3 유튜브 동영상 통계 추출함수 -----
+<span class="co"># yt_video_stat_tbl &lt;- map_df(yt_channel, get_all_channel_video_stats)</span>
+
+<span class="co"># 2. 데이터 가져오기 -----</span>
+## 2.1. 유튜브 채널 데이터 가져오기 -----
+yt_channel_stat_tbl &lt;-<span class="st"> </span><span class="kw">tibble</span>(<span class="dt">channel=</span> <span class="kw">names</span>(yt_channel), <span class="dt">stat =</span><span class="ot">NA</span>)
+
+yt_channel_stat_tbl &lt;-<span class="st"> </span>yt_channel_stat_tbl <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">   </span><span class="kw">mutate</span>(<span class="dt">stat =</span> <span class="kw">map</span>(yt_channel, <span class="op">~</span><span class="st"> </span><span class="kw">get_yt_stat</span>(.x)))
+
+yt_channel_stat_tbl <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">write_rds</span>(<span class="st">&quot;data/yt_channel_stat_tbl.rds&quot;</span>)
+
+## 2.2. 유튜브 동영상 데이터 가져오기 -----
+yt_video_stat_tbl &lt;-<span class="st"> </span><span class="kw">map_df</span>(yt_channel, get_all_channel_video_stats)
+yt_video_stat_tbl <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">write_rds</span>(<span class="st">&quot;data/yt_video_stat_tbl.rds&quot;</span>)</code></pre></div>
+<h1 id="youtube-channel">각정당별 대표 채널 활동성</h1>
+<p>유튜브 각 채널별로 조회수, 구독자수 등을 데이터프레임으로 제작하여 기초 통계작업을 수행한다.</p>
+<p><span class="math display">\[평균 조회수 = \frac{조회수}{동영상수}\]</span></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">yt_channel_tbl &lt;-<span class="st"> </span><span class="kw">read_rds</span>(<span class="st">&quot;data/yt_channel_tbl.rds&quot;</span>)
+
+yt_channel_tbl <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="st">`</span><span class="dt">평균조회수</span><span class="st">`</span> =<span class="st"> `</span><span class="dt">조회수</span><span class="st">`</span> <span class="op">/</span><span class="st"> `</span><span class="dt">동영상수</span><span class="st">`</span>) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">arrange</span>(<span class="kw">desc</span>(<span class="st">`</span><span class="dt">평균조회수</span><span class="st">`</span>)) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span>DT<span class="op">::</span><span class="kw">datatable</span>() <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span>DT<span class="op">::</span><span class="kw">formatRound</span>(<span class="kw">c</span>(<span class="dv">2</span><span class="op">:</span><span class="dv">5</span>), <span class="dt">digits=</span><span class="dv">0</span>)</code></pre></div>
+<p>preserve29e5ad6189e6efee</p>
+<h1 id="youtube-channel-EDA">유튜브 채널 활동성 분석</h1>
+<p>대표적인 유튜브 채널 활동성 분석을 위해서 각 동영상별 좋아요수와 조회수를 바탕으로 활동성을 살펴본다.</p>
+<h2 id="youtube-channel-EDA-view-likes">조회수 vs 좋아요수 시각화</h2>
+<p>정량적으로 조회수와 좋아요수를 비교하기 전에 시각화를 통해 각 정당별로 살펴본다.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(extrafont)
+<span class="kw">loadfonts</span>()
+
+yt_channel_stat_tbl &lt;-<span class="st"> </span><span class="kw">read_rds</span>(<span class="st">&quot;data/yt_channel_stat_tbl.rds&quot;</span>)
+
+yt_channel_stat_tbl <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">unnest</span>(stat) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">mutate_at</span>(<span class="kw">vars</span>(<span class="kw">contains</span>(<span class="st">&quot;Count&quot;</span>)), as.numeric) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="st">`</span><span class="dt">channel</span><span class="st">`</span> =<span class="st"> </span><span class="kw">factor</span>(<span class="st">`</span><span class="dt">channel</span><span class="st">`</span>, <span class="dt">levels=</span><span class="kw">c</span>(<span class="st">&quot;민주당씀&quot;</span>, <span class="st">&quot;TV홍카콜라&quot;</span>, <span class="st">&quot;바른미래당&quot;</span>, <span class="st">&quot;정의당TV&quot;</span>))) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">ggplot</span>(<span class="kw">aes</span>(<span class="dt">x=</span>viewCount, <span class="dt">y=</span>likeCount, <span class="dt">color=</span>channel)) <span class="op">+</span>
+<span class="st">    </span><span class="kw">geom_point</span>() <span class="op">+</span>
+<span class="st">    </span><span class="kw">scale_y_log10</span>(<span class="dt">labels=</span>scales<span class="op">::</span>comma) <span class="op">+</span>
+<span class="st">    </span><span class="kw">scale_x_log10</span>(<span class="dt">labels=</span>scales<span class="op">::</span>comma) <span class="op">+</span>
+<span class="st">    </span><span class="kw">geom_smooth</span>(<span class="dt">method =</span> <span class="st">&quot;lm&quot;</span>, <span class="dt">se=</span><span class="ot">FALSE</span>) <span class="op">+</span>
+<span class="st">    </span><span class="kw">labs</span>(<span class="dt">x=</span><span class="st">&quot;조회수&quot;</span>, <span class="dt">y=</span><span class="st">&quot;좋아요수&quot;</span>, <span class="dt">color=</span><span class="st">&quot;유튜브 채널&quot;</span>,
+         <span class="dt">title=</span><span class="st">&quot;유튜브 채널 조회수와 좋아요수 상관관계&quot;</span>) <span class="op">+</span>
+<span class="st">    </span><span class="kw">theme_bw</span>(<span class="dt">base_family=</span><span class="st">&quot;NanumGothic&quot;</span>) <span class="op">+</span>
+<span class="st">    </span><span class="kw">theme</span>(<span class="dt">legend.position =</span> <span class="st">&quot;top&quot;</span>) <span class="op">+</span>
+<span class="st">    </span><span class="kw">scale_color_manual</span>(<span class="dt">values =</span> <span class="kw">c</span>(<span class="st">&quot;blue&quot;</span>, <span class="st">&quot;red&quot;</span>, <span class="st">&quot;cyan&quot;</span>, <span class="st">&quot;yellow&quot;</span>)) </code></pre></div>
+<p><img src="nlp-youtube-comment_files/figure-html/import-youtube-channel-EDA-1.png" width="672" style="display: block; margin: auto;" /></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">reg_df &lt;-<span class="st"> </span>yt_channel_stat_tbl <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">stat  =</span> <span class="kw">map</span>(stat, <span class="op">~</span><span class="kw">mutate_at</span>(.x, <span class="kw">vars</span>(<span class="kw">contains</span>(<span class="st">&quot;Count&quot;</span>)), as.numeric))) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">model =</span> <span class="kw">map</span>(stat, <span class="op">~</span><span class="kw">lm</span>(likeCount <span class="op">~</span><span class="st"> </span>viewCount, <span class="dt">data=</span>.x))) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">tidy_model =</span> <span class="kw">map</span>(model, broom<span class="op">::</span>tidy)) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">unnest</span>(tidy_model) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">filter</span>(term <span class="op">==</span><span class="st"> &quot;viewCount&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">arrange</span>(<span class="kw">desc</span>(estimate))</code></pre></div>
+<h2 id="youtube-channel-EDA-view-likes-effect">조회수 vs 좋아요수 효과</h2>
+<p>조회수를 좋아요로 변환되는 능력치를 회귀분석 회귀계수로 추정을 한다면 TV홍카콜라 채널이 0.0647414으로 정의당의 0.02447과 비교하여 더 많은 호감도를 보이는 것으로 나타난다.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">reg_df <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">select</span>(channel, estimate, p.value)</code></pre></div>
+<pre><code># A tibble: 3 x 3
+  channel    estimate  p.value
+  &lt;chr&gt;         &lt;dbl&gt;    &lt;dbl&gt;
+1 민주당씀     0.0723 6.25e- 8
+2 TV홍카콜라   0.0647 4.15e-19
+3 정의당TV     0.0245 5.97e-42</code></pre>
+<h2 id="youtube-channel-EDA-details">유튜브 채널별 동영상 상세</h2>
+<p>앞서 유튜브에서 추출한 채널별 데이터를 원본 동영상 수준으로 내려서 상세히 살펴볼 수 있도록 <code>DT</code> 팩키지 인터랙티브 표를 사용한다.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">yt_video_stat_tbl &lt;-<span class="st"> </span><span class="kw">read_rds</span>(<span class="st">&quot;data/yt_video_stat_tbl.rds&quot;</span>)
+
+yt_video_stat_tbl <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">publication_date =</span> <span class="kw">as.Date</span>(publication_date)) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">id =</span> <span class="kw">paste0</span>(<span class="st">&quot;&lt;a href=https://www.youtube.com/watch?v=&quot;</span>, id,<span class="st">&quot;&gt;&quot;</span>, id,<span class="st">&quot;&lt;/a&gt;&quot;</span>)) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="co"># arrange(desc(-viewCount)) %&gt;% </span>
+<span class="st">  </span>DT<span class="op">::</span><span class="kw">datatable</span>(<span class="dt">escape=</span><span class="ot">FALSE</span>, <span class="dt">options =</span> <span class="kw">list</span>(<span class="dt">scrollX=</span><span class="ot">TRUE</span>, <span class="dt">autoWidth =</span> <span class="ot">TRUE</span>,
+                                         <span class="dt">columnDefs =</span> <span class="kw">list</span>(<span class="kw">list</span>(<span class="dt">width =</span> <span class="st">&#39;300px&#39;</span>, <span class="dt">targets =</span> <span class="kw">c</span>(<span class="dv">2</span>))))) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span>DT<span class="op">::</span><span class="kw">formatCurrency</span>(<span class="kw">c</span>(<span class="st">&quot;viewCount&quot;</span>, <span class="st">&quot;likeCount&quot;</span>, <span class="st">&quot;dislikeCount&quot;</span>, <span class="st">&quot;commentCount&quot;</span>), <span class="dt">currency =</span> <span class="st">&quot;&quot;</span>, <span class="dt">digits =</span> <span class="dv">0</span>) </code></pre></div>
+<p>preservebfd5ab619bf3d0fd</p>
+<h1 id="youtube-channel-comment">유튜브 동영상 댓글</h1>
+<h2 id="youtube-channel-comment-crawl">유튜브 동영상 댓글 가져오기</h2>
+<p>시간이 많이 걸려 대표적인 두 채널 “TV홍카콜라”, “정의당TV” 유튜브 채널만 데이터를 가져온다. <code>get_all_comments()</code> 함수를 통해 댓글을 가져오는데, 동영상 <code>id</code>가 키값으로 되어 있어있고, 댓글이 없는 경우 오류가 나기 때문에 이를 방지하기 위해서 <code>possibly()</code> 부사를 사용한다. 그리고 <code>for</code> 루프로 임의 시간 0~2초 사이 간격을 두고 각 동영상 <code>id</code>에 대한 댓글을 불러온다.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># 1. 대상 리스트 동영상 정리 -----</span>
+
+<span class="kw">library</span>(tictoc)
+
+yt_two_channel &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="st">&quot;TV홍카콜라&quot;</span> =<span class="st"> &quot;UCfmicRK2-WdZMVQDrfcitLA&quot;</span>,
+                       <span class="st">&quot;민주당씀&quot;</span>   =<span class="st"> &quot;UCoQD2xsqwzJA93PTIYERokg&quot;</span>)
+
+yt_two_video_stat_df &lt;-<span class="st"> </span><span class="kw">map_df</span>(yt_two_channel, get_all_channel_video_stats)
+
+yt_two_video_stat_df <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">write_rds</span>(<span class="st">&quot;data/yt_two_video_stat_df.rds&quot;</span>)
+
+<span class="co"># 2. 함수형 프로그래밍 동영상 댓글 -----</span>
+## 중단됨 !!!
+get_all_comments_possibly &lt;-<span class="st"> </span><span class="kw">possibly</span>(get_all_comments, <span class="dt">otherwise =</span> <span class="ot">NULL</span>)
+
+<span class="kw">tic</span>()
+yt_video_comment_list &lt;-<span class="st"> </span><span class="kw">map</span>(yt_two_video_stat_df<span class="op">$</span>id, get_all_comments_possibly)
+<span class="kw">toc</span>()
+
+yt_video_comment_list <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">write_rds</span>(<span class="st">&quot;data/yt_video_comment_list.rds&quot;</span>)
+
+<span class="co"># 396.86 sec elapsed</span>
+
+<span class="co"># 3. for 루프 동영상 댓글 -----</span>
+
+<span class="kw">tic</span>()
+yt_video_comment_list &lt;-<span class="st"> </span><span class="kw">list</span>()
+
+<span class="cf">for</span>(i <span class="cf">in</span> <span class="kw">seq_along</span>(yt_two_video_stat_df<span class="op">$</span>id)) {
+<span class="co"># for(i in 1:20) {</span>
+  yt_video_comment_list[[i]] &lt;-<span class="st"> </span><span class="kw">get_all_comments_possibly</span>(yt_two_video_stat_df<span class="op">$</span>id[i])
+  <span class="kw">cat</span>(i, <span class="st">&quot; :</span><span class="ch">\n</span><span class="st">&quot;</span>)
+  <span class="kw">Sys.sleep</span>(<span class="kw">runif</span>(<span class="dv">1</span>, <span class="dt">min=</span><span class="dv">0</span>,<span class="dt">max=</span><span class="dv">2</span>))
+}
+<span class="kw">toc</span>()
+
+yt_video_comment_list <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">write_rds</span>(<span class="st">&quot;data/yt_video_comment_list.rds&quot;</span>)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">yt_video_comment_list[<span class="kw">c</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">10</span>)] <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">set_names</span>(yt_two_video_stat_df<span class="op">$</span>id[<span class="dv">1</span><span class="op">:</span><span class="dv">10</span>]) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span>listviewer<span class="op">::</span><span class="kw">jsonedit</span>()</code></pre></div>
+<p>preservef4eb5c81b2ceab16</p>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p><a href="http://www.businesspost.co.kr/BP?command=naver&amp;num=108382">이정은 기자(2018-12-31 17:02:34), “홍준표 ‘홍카콜라’ 대 유시민 ‘알릴레오’, 유튜브 정치채널 대약진”, 비즈니스 포스트</a><a href="#fnref1">↩</a></p></li>
+</ol>
+</div>
+        </div>
+      </div>
+      </article>
+      <div class="footer">
+        <a class="label swc-blue-bg" href="http://software-carpentry.org">Software Carpentry</a>
+        <a class="label swc-blue-bg" href="https://github.com/swcarpentry/lesson-template">Source</a>
+        <a class="label swc-blue-bg" href="mailto:admin@software-carpentry.org">Contact</a>
+        <a class="label swc-blue-bg" href="LICENSE.html">License</a>
+      </div>
+    </div>
+    <!-- Javascript placed at the end of the document so the pages load faster -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="css/bootstrap/bootstrap-js/bootstrap.js"></script>
+    <script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
+  </body>
+</html>
