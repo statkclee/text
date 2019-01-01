@@ -25,6 +25,8 @@ knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE,
 
 library(tidyverse)
 
+yt_channel_tbl <- read_rds("data/yt_channel_tbl.rds")
+
 yt_video_comment_list  <- read_rds("data/yt_video_comment_list.rds")
 ## 동영상 통계
 yt_two_video_stat_df <- read_rds("data/yt_two_video_stat_df.rds")
