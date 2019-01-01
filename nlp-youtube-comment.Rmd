@@ -264,7 +264,7 @@ yt_video_comment_list %>%
   write_rds("data/yt_video_comment_list.rds")
 ```
 
-```{r youtube-channel-comment-show}
+```{r youtube-channel-comment-show, eval=FALSE}
 yt_video_comment_list[c(1:10)] %>% 
   set_names(yt_two_video_stat_df$id[1:10]) %>% 
   listviewer::jsonedit()
@@ -331,12 +331,12 @@ yt_video_comment_df %>%
 ```
 
 
-### 댓글 빈도수 {#youtube-channel-comment-dataframe-EDA-frequency}
+### 채널별 상위 10명 영향력 큰 사용자 {#youtube-channel-comment-influencer}
 
 단순히 두 채널의 동영상 `id`에 붙은 댓글 갯수의 빈도수를 시각화하여 참여도를 파악한다.
 정당별로 나눠 상위 좋아요를 많이 받은 10명을 뽑아서 전체 받은 좋아요 총계를 막대그래프로 시각화한다.
 
-```{r youtube-channel-comment-EDA-influencer}
+```{r youtube-channel-EDA-influencer}
 yt_video_comment_df %>% 
   mutate(likeCount = as.integer(likeCount)) %>% 
   group_by(channel, authorDisplayName, authorChannelId.value) %>% 
