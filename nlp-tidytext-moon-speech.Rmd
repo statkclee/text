@@ -1,7 +1,7 @@
 ---
 layout: page
 title: "유트브 댓글 - 자연어 처리"
-subtitle: "깔끔한 텍스트 (Tidytext) - 영어"
+subtitle: "깔끔한 텍스트 (Tidytext) - 신년기자회견(2019)"
 author:
     name: xwMOOC
     url: https://www.facebook.com/groups/tidyverse/
