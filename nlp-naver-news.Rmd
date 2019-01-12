@@ -103,8 +103,13 @@ news_tidy_df %>% head
 `news_df`에서 관련도순으로 상위 100개 기사를 추출하였다. 
 "데이터 사이언스" 용어와 관련된 기사를 가장 많이 출고한 언론사 두곳을 찾아 비교분석해 보자.
 
+## `tidy` 방식 아님 {#naver-news-preprocessing-EDA-non-tidy}
 
-```{r naver-news-EDA}
+전통적인 방식으로 `quanteda` 팩키지를 동원해서 데이터 사이언스 관련 
+출고 기사가 많은 두 언론사("한국경제TV", "ZDNet Korea")를 추출하여 `dfm()` 행렬을 만들어 
+빈도수를 계산하고 이를 `ggplot`에 넣어 각각 시각화 산출물을 만들고 `cowplot`으로 시각화하는 코드는 다음과 같다.
+
+```{r naver-news-EDA-nontidy}
 library(quanteda)
 library(extrafont)
 loadfonts()
@@ -153,5 +158,28 @@ zdnet_g <- ds_zdnet_freq %>%
 
 cowplot::plot_grid(ke_g, zdnet_g)
 
+```
+
+## `tidy` 방식 {#naver-news-preprocessing-EDA-tidy-way}
+
+`tidy` 방식으로 코드를 작성하게 되면 `dplyr` 동사를 사용해서 각 언론사별로 15개 단어를 추출하여 시각화를 한다.
+이번 경우 단어길이가 1인 것은 제외시킨다. 그리고 나서 `ggplot`으로 시각화한다.
+
+```{r naver-news-EDA-tidy}
+news_tidy_df %>% 
+  count(source, bow, sort=TRUE) %>% 
+  mutate(word_length = str_length(bow)) %>% 
+  filter(word_length > 1) %>% 
+  filter(source %in% c("한국경제TV", "ZDNet Korea"))   %>% 
+  group_by(source) %>% 
+  top_n(15, wt=n) %>% 
+  ungroup() %>% 
+  ggplot(aes(x=fct_reorder(bow,n), y=n, fill=bow)) +
+    geom_col() +
+    facet_wrap(~source, scales = "free") +
+    coord_flip() +
+    labs(x="", y="단어 빈도", title="ZDnet 데이터 사이언스 단어 빈도") +
+    theme_minimal(base_family = "NanumGothic") +
+    theme(legend.position = "none")
 ```
 
