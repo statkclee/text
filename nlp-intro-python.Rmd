@@ -34,6 +34,43 @@ knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
 
 <img src="fig/nlp-nltk-bow.png" alt="자연어 처리" width="100%" />
 
+
+## `nltk` 환경설정  {#nlp-regex-nltk-download}
+
+표제어 추출(Lemmatization)을 위해서 `nltk` `wordnet`을 다운로드하여 설치한다.
+`Lemma`는 한글로 번역하면 '표제어' 또는 '기본 사전형 단어' 의미로 Lemmatization(표제어 추출)은 단어들로부터 이 표제어를 찾아는 과정이다. 반면에 어간 추출(Stemming)은 Stem(어간)을 추출하는 작업을 Stemming이라고 한다. [^deep-learning-nlp] 
+
+[^deep-learning-nlp]: [딥 러닝을 이용한 자연어 처리 입문, "어간 추출(Stemming) and 표제어 추출(Lemmatization)](https://wikidocs.net/21707)
+
+|   어간 추출(Stemming)   | 표제어 추출(Lemmatization) |
+|-------------------------|----------------------------|
+| am &rarr; am            | am &rarr; be               |
+| the going &rarr; the go | the going &rarr; the going |
+| having &rarr; hav       | having &rarr; have         |
+
+```{python download-nltk}
+import nltk
+nltk.download('punkt')     # 토큰으로 쪼개기
+nltk.download('stopwords') # 불용어
+nltk.download('wordnet')   # 표제어 추출
+
+```
+
+## 텍스트 파일 [^nlp-dataset] {#nlp-regex-import}
+
+[^nlp-dataset]: [Jason Brownlee (September 27, 2017), "Datasets for Natural Language Processing"](https://machinelearningmastery.com/datasets-natural-language-processing/)
+
+[The Project Gutenberg EBook of Pride and Prejudice, by Jane Austen](https://www.gutenberg.org/files/1342/1342.txt) 웹사이트에서 텍스트를 다운로드 받아 `data/` 디렉토리에 저장하고 파이썬으로 불러와서 첫 5줄을 출력한다.
+
+```{python import-text}
+## 텍스트 파일 --> 문자열로 변환
+with open('data/Pride_and_Prejudice_1342.txt', 'r') as jane_austin:
+    novel = jane_austin.read()
+
+print(novel[:100])
+```
+
+
 ## 토큰화(Tokenization) {#nlp-token}
 
 **토큰화(Tokenization)**는 문자열, 문장, 문서를 토큰(token, 작은 덩어리)으로 바꾸는 과정이다.
@@ -42,7 +79,7 @@ knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
 
 토큰화를 하는 이유는 다음과 같다. 
 
-- 품사(Part of Speech, POS)를 수울히 매핑할 수 있다.
+- 품사(Part of Speech, POS)를 수월히 매핑할 수 있다.
 - 불용어 매칭
 - 원치않는 토큰을 제거
 
@@ -53,6 +90,28 @@ knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
 - `TweetTokenizer`: 트위터 특성(`#` 해쉬태그, `@` 언급 등)을 반영한 토큰화 
 
 `nltk` 팩키지 `nltk.tokenize`를 통해 `sent_tokenize`, `regexp_tokenize`, `TweetTokenizer` 메쏘드를 가져와서 사용할 수 있다.
+
+`type()` 함수로 파이썬 객체 자료형을 확인할 수 있다.
+`set()` 함수를 사용해서 유일무이한 토큰 갯수를 확인할 수 있다.
+
+```{python tokenize-text}
+## 문자열 --> 토큰 추출
+from nltk.tokenize import word_tokenize
+from nltk.tokenize import regexp_tokenize
+
+### 워드 토큰
+word_tokens = word_tokenize(novel)
+
+### 정규표현식 토큰
+token_pattern = r"\w+"
+regex_tokens = regexp_tokenize(novel, token_pattern)
+
+print(u"유일무이한 토큰 갯수: ", len(set(word_tokens)),  "단어 토큰: ", len(word_tokens))
+print(u"유일무이한 토큰 갯수: ", len(set(regex_tokens)), "정규표현식 토큰: ", len(regex_tokens))
+print(word_tokens[:5])
+print(regex_tokens[:5])
+
+```
 
 ## 데이터 전처리(preprocessing) {#nlp-preprocessing}
 
@@ -65,10 +124,43 @@ knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
 - 불용어 제거(Stopwords)
 - 구두점(Punctuation)
 
+```{python tokenize-text-preprocessing}
+## 토큰 전처리
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+
+stop_words = set(stopwords.words('english')) 
+
+# 알파벳만 추출
+alpha_regex_tokens = [t for t in regex_tokens if t.isalpha()]
+
+# 불용어 정리
+alpha_regex_no_stops_tokens = [t for t in alpha_regex_tokens if t not in stop_words]
+
+# WordNetLemmatizer 생성자
+wordnet_lemmatizer = WordNetLemmatizer()
+
+# Lemmatize all tokens into a new list: lemmatized
+alpha_regex_no_stops_lemmatized_tokens = [wordnet_lemmatizer.lemmatize(t) for t in alpha_regex_no_stops_tokens]
+
+print(alpha_regex_no_stops_lemmatized_tokens[:10])
+```
+
 
 ## 단어주머니(Bag of words) {#nlp-bow}
 
 텍스트에 대한 전처리 작업이 끝난 경우 `collections` 팩키지 `Counter()` 메쏘드를 사용해서 단어주머니를 생성시킨다.
+
+
+```{python tokenize-text-bow}
+from collections import Counter
+
+novel_bow = Counter(alpha_regex_no_stops_lemmatized_tokens)
+
+# 최빈값 10개 단어 추출
+print(novel_bow.most_common(10))
+
+```
 
 
 # 단어주머니 &rarr; 통계 분석 [^lucy-park-gensim] {#nlp-analysis}
