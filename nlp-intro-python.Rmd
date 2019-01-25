@@ -34,6 +34,13 @@ knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
 
 <img src="fig/nlp-nltk-bow.png" alt="자연어 처리" width="100%" />
 
+RStudio IDE에서 R마크다운 파일로 파이썬 코드를 실행하기 위한 환경을 설정하자.
+
+```{r python-setup}
+library(reticulate)
+use_condaenv("anaconda3")
+```
+
 
 ## `nltk` 환경설정  {#nlp-regex-nltk-download}
 
@@ -163,13 +170,70 @@ print(novel_bow.most_common(10))
 ```
 
 
-# 단어주머니 &rarr; 통계 분석 [^lucy-park-gensim] {#nlp-analysis}
+## 단어빈도 시각화 [^bow-barplot] {#nlp-bow-matplotlib}
 
-[^lucy-park-gensim]: [Eunjeong (Lucy) Park, Data Scientist, "한국어와 NLTK, Gensim의 만남"](https://www.slideshare.net/lucypark/nltk-gensim)
+[^bow-barplot]: [stackoverflow - "plot most frequent words in python "](https://stackoverflow.com/questions/38805341/plot-most-frequent-words-in-python)
 
-단어 벡터(Word Vector): Word vectors are multi-dimensional mathematical representations of words created using deep learning methods. They give us insight into relationships between words in a corpus.
-Co-occurrence: 두 단어가 정해진 구간 내에서 동시에 등장함.
-Collocation(연어): 인접하게 빈번하게 등장하는 단어 ("Data" + "Science")
+최비값 단어를 `matplotlib`으로 시각화하자. [stackoverflow - "plot most frequent words in python "](https://stackoverflow.com/questions/38805341/plot-most-frequent-words-in-python)을 참조하여 제인 오스틴 소설 "오만과 편견"에 가장 많이 회자되는 단어를 상위 10개를 추출하여 시각화한다.
+
+```{python tokenize-text-bow-matplotlib, eval=FALSE}
+import matplotlib.pyplot as plt
+import numpy as np
+
+## 상위 10개 단어 추출
+top10_novel_bow = novel_bow.most_common(10)
+
+## 10개 단어 시각화를 위한 기반 작업
+n_groups = len(top10_novel_bow)
+index = np.arange(n_groups)
+
+## 단어빈도수와 단어 리스트 자료형 준비
+bow_vals = [x[1] for x in top10_novel_bow]
+bow_words = [x[0] for x in top10_novel_bow]
+
+## 막대그래프 시각화
+
+bar_width = 0.25
+
+plt.bar(index, bow_vals, bar_width, color='b', label='Ocurrences')
+plt.xticks(index + bar_width, bow_words)
+
+plt.tight_layout()
+plt.show()
+
+```
+
+다음과 같이 시각화가 결과가 R마크다운에 포함되어 렌더링되어야 하는데... Qt 오류가 발생되는 경우 우회하는 방법으로 `reticulate` 파이썬 객체를 R객체로 바꾸어 `ggplot`으로 시각화한다.
+
+<img src="fig/matplotlib-bow-python.png" alt="matplotlib BOW 시각화" width="77%" />
+
+# 파이썬 시각화 오류 {#nlp-bow-matplotlib-error}
+
+윈도우 환경에서 `matplotlib`을 활용하여 시각화할 경우 `this application failed to start because it could not find or load the qt platform plugin windows`와 같은 오류가 발생하는 경우가 있다.
+
+<img src="fig/python-matplotlib-qt-error.png" alt="matplotlib 오류" width="77%" />
 
 
-<img src="fig/nlp-gensim.png" alt="자연어 처리 - gensim" width="100%" />
+# 파이썬 객체 &rarr; R객체 &rarr; `ggplot` {#nlp-bow-matplotlib-error-ggplot}
+
+파이썬 객체를 R로 가져와서 시각화를 위해서 데이터프레임으로 변환시킨다.
+그리고 나서 `ggplot` 문법에 맞춰 시각화한다.
+
+```{r python-matplotlib-ggplot, eval=FALSE}
+library(tidyverse)
+library(extrafont)
+loadfonts()
+
+py$top10_novel_bow %>% 
+  enframe %>%  
+  mutate(word = map_chr(value, 1),
+         count = map_int(value, 2)) %>% 
+  ggplot(aes(x=fct_reorder(word, count), y=count, fill=word)) +
+    geom_col() +
+    coord_flip() +
+    labs(x="", y="단어 빈도수", title="오만과 편견에 가장 많이 등장하는 단어") +
+    theme_light(base_family = "NanumGothic") +
+    scale_y_continuous(labels=scales::comma) +
+    theme(legend.position = "none")
+```
+
