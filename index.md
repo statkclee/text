@@ -14,7 +14,7 @@ title: 자연어 처리 - 텍스트
 
 ## 학습목차 
 
-1. 1. [텍스트 데이터](nlp-text.html)
+1. [텍스트 데이터](nlp-text.html)
     1. [단어주머니(Bag of Words)](nlp-bag-of-words.html)
     1. [텍스트 데이터와 저작](https://statkclee.github.io/ds-authoring/)
     1. [지프 법칙(Zipf law) - 시군 인구](nlp-zipf-law.html)    
