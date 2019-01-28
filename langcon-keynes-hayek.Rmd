@@ -34,7 +34,9 @@ knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
 - [존 메이너드 케인스(John Maynard Keynes)](https://ko.wikipedia.org/wiki/%EC%A1%B4_%EB%A9%94%EC%9D%B4%EB%84%88%EB%93%9C_%EC%BC%80%EC%9D%B8%EC%8A%A4)
 - [프리드리히 하이에크(Friedrich Hayek)](https://ko.wikipedia.org/wiki/%ED%94%84%EB%A6%AC%EB%93%9C%EB%A6%AC%ED%9E%88_%ED%95%98%EC%9D%B4%EC%97%90%ED%81%AC)
 
-## 데이터 {#nlp-keyens-hayek-books}
+# 데이터 [^ingest-pdf] {#nlp-keyens-hayek-books-data}
+
+[^ingest-pdf]: [PDF 감옥에서 데이터를 탈출시키다.](https://statkclee.github.io/ingest-data/ds-extract-text-from-pdf-survey.html)
 
 케인즈는 "고용·이자 및 화폐의 일반 이론(The General Theory of Employment, Interest and Money)", 흔히 "일반이론"이라고 불리는 책을 발표하였는데, 
 기존의 신고전파 경제학자들의 시장주의를 비판함과 동시에 유효수요이론을 제시하였고, 
@@ -42,3 +44,193 @@ knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
 구글을 통하면 원서를 어렵지 않게 PDF 파일로 다운로드 받을 수 있다.
 
 <img src="fig/keynes-hyaek-book.png" alt="케인즈 하이에크 책" width="100%" />
+
+## 케인즈 vs 하이에크 책정보 {#nlp-keyens-hayek-books-info}
+
+`pdftools` 팩키지를 사용해서 구글을 통해 입수한 `.pdf` 파일에 대한 정보를 가져와서 비교한다.
+두책 모두 거의 비슷한 페이지수를 가지고 있다. 일반이론 263쪽, 노예의 길 266쪽 그리고 나머지 `pdf_info`를 통해 가져온 메타정보는 그다지 유용한 것이 없어 보인다.
+
+```{r ingest-pdf-books-info}
+library(tidyverse)
+library(pdftools)
+
+hayek_info <- pdf_info("data/The-Road-to-Serfdom-F.A.-Hayek.pdf")
+keynes_info <- pdf_info("data/generaltheory.pdf")
+
+tribble(~"book", ~"pages",  ~"version", ~"생성일",
+  "케인즈",   keynes_info$pages, keynes_info$version, keynes_info$created,
+  "하이에크", hayek_info$pages,  hayek_info$version, hayek_info$created
+)
+
+```
+
+## 케인즈 vs 하이에크 텍스트 {#nlp-keyens-hayek-books}
+
+`pdf_text` 함수로 `.pdf` 파일을 R에서 처리 가능한 문자열을 뽑아내서 객체에 담아낸다.
+
+
+<div class = "row">
+  <div class = "col-md-6">
+**케인즈 일반이론**
+
+```{r ingest-pdf-books-text-keynes}
+keynes_pdf <- pdf_text("data/generaltheory.pdf")
+
+listviewer::jsonedit(keynes_pdf[1:10])
+
+```
+
+  </div>
+  <div class = "col-md-6">
+**하이에크 노예의 길**
+
+```{r ingest-pdf-books-text-hayek}
+hayek_pdf <- pdf_text("data/The-Road-to-Serfdom-F.A.-Hayek.pdf")
+
+listviewer::jsonedit(hayek_pdf[1:10])
+```
+
+  </div>
+</div>
+
+## 전체 단어수 {#nlp-keyens-hayek-books-words}
+
+페이지수는 케인즈 저서의 경우 `r keynes_info$pages`, 
+하이에크 저서의 경우 `r hayek_info$pages`으로 차이가 없지만,
+단어갯수에 있어서는 전처리 전에 다음과 같이 차이가 난다.
+
+```{r ingest-pdf-books-text-hayek-wordcount}
+## 케인즈
+str_count(keynes_pdf, "\\S+") %>% sum(.)
+
+## 하이에크
+str_count(hayek_pdf, "\\S+") %>% sum(.)
+```
+
+## 텍스트 데이터 전처리 {#nlp-keyens-hayek-books-preprocess}
+
+`tidytext` 팩키지를 활용하여 두 책을 깔끔한(tidy) 텍스트 형태로 만들어 데이터프레임으로 제작한 후에 영어라서 모든 영문자를 소문자로 변경시킨다. 그리고 나서 불용어(stopword)를 빼고 텍스트분석을 위한 자료구조로 만든다.
+
+```{r ingest-pdf-books-preprocess}
+library(tidytext)
+
+keynes_df <- keynes_pdf %>% 
+  tbl_df() %>% 
+  mutate(book = "케인즈") %>% 
+  unnest_tokens(word, value)
+
+hayek_df <- hayek_pdf %>% 
+  tbl_df() %>% 
+  mutate(book = "하이에크") %>% 
+  unnest_tokens(word, value)
+
+data(stop_words)
+
+book_df <- bind_rows(keynes_df, hayek_df) %>% 
+  mutate(word = str_to_lower(word)) %>% 
+  anti_join(stop_words)
+
+book_df %>% 
+  group_by(book) %>% 
+  count(word, sort=TRUE) %>% 
+  filter(word %in% c("cost", "costs"))
+```
+
+
+# 탐색적 자연어 처리 {#nlp-keyens-hayek-books-eda}
+
+다양한 시각화를 통해서 케인즈와 하이에크 책에 담긴 책의 내용을 살펴보자.
+
+## 단어 빈도 {#nlp-keyens-hayek-books-eda-frequency}
+
+단어빈도(word frequency)를  케인즈와 하이에크를 비교함으로써 책을 집필하면서 
+가장 염두에 둔 단어가 무엇인지 살펴본다.
+
+```{r ingest-pdf-books-eda-frequency}
+library(extrafont)
+loadfonts()
+
+# book_df %>% 
+#   group_by(book) %>% 
+#   count(word, sort=TRUE) %>% 
+#   top_n(10, wt=n) %>% 
+#   ungroup() %>% 
+#   spread(book, n, fill=0) %>%
+#   DT::datatable()
+
+book_df %>% 
+  group_by(book) %>% 
+  count(word, sort=TRUE) %>% 
+  top_n(20, wt=n) %>% 
+  ggplot(aes(x=fct_reorder2(word, book, -n), y=n, fill=book)) +
+    geom_col() +
+    coord_flip() +
+    facet_wrap(~book, scales = "free") +
+    labs(title="케인즈 vs 하이에크 고빈도 용어 20선",
+         subtitle="케인즈 일반이론, 하이에크 노예의 길",
+         x="", y="") +
+    theme_light(base_family="NanumGothic") +
+    theme(legend.position = "none") 
+```
+
+## 공통/비교 단어구름 [^tidytext-comparison-cloud] {#nlp-keyens-hayek-books-eda-wordcloud}
+
+[^tidytext-comparison-cloud]: [stackoverflow, "tidytext — how to do commonality and comparsion word clouds"](https://stackoverflow.com/questions/47281927/tidytext-how-to-do-commonality-and-comparsion-word-clouds)
+
+공통 단어구름(commonality cloud)을 통해  케인즈와 하이에크가 공통으로 책을 집필하면서 
+가장 염두에 둔 단어가 어떻게 되는지 시각적으로 확인한다.
+`wordcloud` 팩키지 `commonality.cloud()` 함수는 행렬(matrix)로 입력값을 갖기 때문에 
+`reshape2` 팩키지 `acast()` 함수로 데이터프레임을 입력받아 `commonality.cloud()` 함수에 넣어 공통 단어구름 시각화 산출물을 생성시킨다. 
+
+
+```{r ingest-pdf-books-eda-wordcloud}
+library(wordcloud)
+library(reshape2)
+
+book_df %>% 
+  group_by(book) %>% 
+  count(word, sort=TRUE) %>% 
+  acast(word ~ book, value.var = "n", fill = 0) %>% 
+  commonality.cloud(scale = c(2,  0.2), colors="steelblue1", random.order = FALSE, max.words = 100)
+```
+
+비교 단어구름(comparison cloud)을 통해  케인즈와 하이에크를 대조함으로써 책을 집필하면서 
+가장 염두에 둔 단어가 어떻게 대비되는지 시각적으로 확인한다.
+`wordcloud` 팩키지 `comparison.cloud()` 함수는 행렬(matrix)로 입력값을 갖기 때문에 
+`reshape2` 팩키지 `acast()` 함수로 데이터프레임을 입력받아 `comparison.cloud()` 함수에 넣어 비교 단어구름 시각화 산출물을 생성시킨다. 
+
+```{r ingest-pdf-books-eda-wordcloud-comparison}
+book_df %>% 
+  group_by(book) %>% 
+  count(word, sort=TRUE) %>% 
+  acast(word ~ book, value.var = "n", fill = 0) %>% 
+  comparison.cloud(title.size = 1,  scale = c(2,  0.2), random.order = FALSE, max.words = 100)
+```
+
+
+## 파라미드 막대 비교그래프 {#nlp-keyens-hayek-books-eda-pyramid}
+
+`plotrix` 팩키지 `pyramid.plot()` 함수를 사용해서 케인즈와 하이에크가 가장 많이 사용한 단어 중 빈도수에서 차이가 큰 단어를 15개 뽑아 피라미드 막대그래프로 시각화한다.
+케인즈 책에 사용된 단어가 하이에크 책에 사용된 단어보다 2배가량 많아 이를 `하이에크`에 2를 곱하여 일부 보정한다.
+
+```{r ingest-pdf-books-eda-pyramid}
+library(plotrix)
+par(family = 'NanumGothic')
+
+book_pyramid_df <- book_df %>% 
+  group_by(book) %>% 
+  count(word, sort=TRUE) %>% 
+  spread(book, n, fill=0, convert = TRUE) %>% 
+  mutate(`하이에크` = 2 * `하이에크`) %>% 
+  filter(`케인즈` != 0,
+         `하이에크` !=0) %>% 
+  mutate(`차이` = abs(`케인즈` - `하이에크`)) %>% 
+  top_n(15, wt=`차이`)
+
+pyramid.plot(book_pyramid_df$`케인즈`, book_pyramid_df$`하이에크`, 
+             labels = book_pyramid_df$word, 
+             gap = 77, 
+             top.labels = c("케인즈", "공통단어", "하이에크"), 
+             main = "케인즈 vs 하이에크 공통단어", unit = NULL)
+
+```
