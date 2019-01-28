@@ -109,3 +109,10 @@ knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE,
     - 정확성, 시간 모두 중요할 때 : 코모란
 
 
+# 자연어 처리 작업흐름 {#data-scientist-nlp-workflow}
+
+자연어 처리에서 상당부분 해결한 문제는 문서 분류(classification)에 대한 부분과 NER, POS와 같은 분야를 들 수 있다.
+단어주머니(Bag of Words)는 가장 단순한 자연어 처리 방법으로 시각화 방법론과 결합되어 자연어 처리를 소수 전문가 영역에서
+누구나 접할 수 있는 일반적인 분석방법으로 민주화시키는데 크게 기여했다고 볼 수 있다.
+
+<img src="fig/text-mining-workflow.png" alt="자연어 처리" width="100%" />

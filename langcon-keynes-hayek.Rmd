@@ -1,0 +1,44 @@
+---
+layout: page
+title: xwMOOC 자연어 처리 - 텍스트
+subtitle: "케인즈 vs 하이에크"
+author:
+    name: xwMOOC
+    url: https://www.facebook.com/groups/tidyverse/
+    affiliation: Tidyverse Korea
+date: "`r Sys.Date()`"
+output:
+  html_document: 
+    toc: yes
+    toc_float: true
+    highlight: tango
+    code_folding: show
+    number_section: true
+    self_contained: true
+editor_options: 
+  chunk_output_type: console
+---
+ 
+``` {r, include=FALSE}
+# source("tools/chunk-options.R")
+
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
+                    comment="", digits = 3, tidy = FALSE, prompt = FALSE, fig.align = 'center')
+
+```
+
+# 케인즈 vs 하이에크 {#nlp-keyens-hayek}
+
+경제학의 두거인 케인즈와 하이에크 대표 저서 두권을 추출하여 자연어 처리 분석을 통해서 인사이트를 얻어보자.
+
+- [존 메이너드 케인스(John Maynard Keynes)](https://ko.wikipedia.org/wiki/%EC%A1%B4_%EB%A9%94%EC%9D%B4%EB%84%88%EB%93%9C_%EC%BC%80%EC%9D%B8%EC%8A%A4)
+- [프리드리히 하이에크(Friedrich Hayek)](https://ko.wikipedia.org/wiki/%ED%94%84%EB%A6%AC%EB%93%9C%EB%A6%AC%ED%9E%88_%ED%95%98%EC%9D%B4%EC%97%90%ED%81%AC)
+
+## 데이터 {#nlp-keyens-hayek-books}
+
+케인즈는 "고용·이자 및 화폐의 일반 이론(The General Theory of Employment, Interest and Money)", 흔히 "일반이론"이라고 불리는 책을 발표하였는데, 
+기존의 신고전파 경제학자들의 시장주의를 비판함과 동시에 유효수요이론을 제시하였고, 
+하이에크는 개인주의와 고전적 자유주의를 지지하는 사람들 사이에서 널리 알려진 "노예의 길(The Road to Serfdom)"을 발표하였다.
+구글을 통하면 원서를 어렵지 않게 PDF 파일로 다운로드 받을 수 있다.
+
+<img src="fig/keynes-hyaek-book.png" alt="케인즈 하이에크 책" width="100%" />

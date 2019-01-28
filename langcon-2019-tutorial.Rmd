@@ -3,9 +3,9 @@ layout: page
 title: xwMOOC 자연어 처리 - 텍스트
 subtitle: "LangCon - 자연어 처리의 화장을 하지 않은 얼굴(민낯): 튜토리얼"
 author:
-    name: 이광춘 TD
-    url: https://www.webzen.com/
-    affiliation: 정보기획팀
+    name: xwMOOC
+    url: https://www.facebook.com/groups/tidyverse/
+    affiliation: Tidyverse Korea
 date: "`r Sys.Date()`"
 output:
   html_document: 
@@ -72,3 +72,4 @@ AWS_SECRET_ACCESS_KEY <- "pxxx"
 [xwMOOC, "유트브 댓글"](https://statkclee.github.io/text/nlp-youtube-comment.html)
 
 # 모형 {#tutorial-youtube-api-model}  
+

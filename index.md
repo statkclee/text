@@ -14,15 +14,16 @@ title: 자연어 처리 - 텍스트
 
 ## 학습목차 
 
-1. **[텍스트 데이터와 저작](https://statkclee.github.io/ds-authoring/)**
-    1. [텍스트 데이터](nlp-text.html)    
+1. 1. [텍스트 데이터](nlp-text.html)
+    1. [단어주머니(Bag of Words)](nlp-bag-of-words.html)
+    1. [텍스트 데이터와 저작](https://statkclee.github.io/ds-authoring/)
     1. [지프 법칙(Zipf law) - 시군 인구](nlp-zipf-law.html)    
 1. **텍스트 데이터 다루기**
     1. [대한민국 헌법](text-constitution.html)
     1. [숫자를 문자로 표현](nlp-number-to-text.html)
     1. [stringr을 통해 문자열/텍스트 다루기](nlp-stringr.html)
     1. [텍스트 데이터 수집 및 단어문서행렬(TDM) -- 트위터](nlp-text-twitter.html)
-1. [단어주머니(Bag of Words)](nlp-bag-of-words.html)
+1. **단어주머니(Bag of Words)**
     1. [아마존 vs. 구글](nlp-amazon-google.html)
     1. [해외연극 등장인물 출현횟수](nlp-movie-play.html)
     1. [국내영화(건축학 개론) 등장인물 출현횟수](nlp-movie-arch101.html)
@@ -34,10 +35,9 @@ title: 자연어 처리 - 텍스트
     1. [고객 방문후기 평점 감성분석 - 옐프(Yelp)](nlp-text-sentiment-yelp.html)
     1. [영어 교과서 감성분석](nlp-english-textbook.html)
 1. [셜록홈즈 - 단어구름에서 토픽모형](silge-topic-modeling.html) 
-1. **평점 텍스트 데이터**
+1. **기계학습과 딥러닝(Deep Learning)**
     1. [텍스트 분류(Text Classification) - 나이브 베이즈(naive bayes)](nlp-text-classification.html)
     1. [영화 평점 - 무비렌즈(MovieLens)](nlp-text-movielens.html)
-1. **기계학습과 딥러닝(Deep Learning)**
     1. [SMS 스팸분류 - Random Forest](nlp-spam-machine-learning.html)
     1. [정규표현식에서 워드2벡(Word2Vec)](nlp-regex-word2vec.html)
     1. [캐글 - 전자상거래 옷 리뷰](text-kaggle-ecommerce-review.html)
@@ -52,3 +52,6 @@ title: 자연어 처리 - 텍스트
     1. [자연어 처리 입문](nlp-intro-python.html) - 텍스트 &rarr; 단어주머니(Bag of Words) 
     1. [자연어 처리 중급](nlp-intermediate-python.html) 
 1. [LangCon - 자연어 처리의 화장을 하지 않은 얼굴: 튜토리얼](langcon-2019-tutorial.html)
+    1. [케인즈 vs 하이에크](langcon-keynes-hayek.html)
+
+
