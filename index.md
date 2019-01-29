@@ -55,5 +55,6 @@ title: 자연어 처리 - 텍스트
     1. [케인즈 vs 하이에크](langcon-keynes-hayek.html)
     1. [케인즈 vs 하이에크 - 감성, 핵심어, 연관단어](langcon-keynes-hayek-sentiment.html)
     1. [케인즈 vs 하이에크 - 토픽모형](langcon-keynes-hayek-topic.html)
+    1. [케인즈 vs 하이에크 - `spacyr`](langcon-keynes-hayek-spacyr.html)
 
 

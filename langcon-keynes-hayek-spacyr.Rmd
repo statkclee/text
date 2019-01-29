@@ -1,0 +1,182 @@
+---
+layout: page
+title: xwMOOC 자연어 처리 - 텍스트
+subtitle: "케인즈 vs 하이에크 - `spacyr`"
+author:
+    name: xwMOOC
+    url: https://www.facebook.com/groups/tidyverse/
+    affiliation: Tidyverse Korea
+date: "`r Sys.Date()`"
+output:
+  html_document: 
+    toc: yes
+    toc_float: true
+    highlight: tango
+    code_folding: show
+    number_section: true
+    self_contained: true
+editor_options: 
+  chunk_output_type: console
+---
+ 
+``` {r, include=FALSE}
+# source("tools/chunk-options.R")
+
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
+                    comment="", digits = 3, tidy = FALSE, prompt = FALSE, fig.align = 'center')
+
+library("spacyr")
+
+```
+
+# 개체명 인식(NER) [^ner-spacyr] {#nlp-keyens-hayek-books-topic}
+
+[^ner-spacyr]: [ratsgo's blog for textmining (22 Mar 2017), "NLP의 기본 절차와 Lexical Analysis"](https://ratsgo.github.io/natural%20language%20processing/2017/03/22/lexicon/)
+
+**포스태깅(Part of speech)**는 단어의 품사 정보를 결정하는 절차이며 **개체명 인식(Named entity recognition)**은 인명, 지명 등 고유명사를 분류하는 방법론이다.
+**형태소**란 의미를 가지는 최소 단위로 더 쪼개면 뜻을 잃어버리는 말의 단위를 뜻한다.
+
+## 파이썬 `spaCy` &rarr; `spacyr` {#nlp-keyens-general-spacy}
+
+[`spacyr`](https://cran.r-project.org/web/packages/spacyr/)은 파이썬 `spaCy` 팩키지 감싼(wrapper) R 팩키지로 `spaCy` 기능을 R에서 사용할 수 있도록 개발되었다.
+`spaCy`는 다음과 같은 기능을 수행할 수 있는데 "industrial strength natural language processing”라고 표방하면서 자연어 처리에 자부심이 있음에 분명하다.
+
+- 텍스트를 토큰 혹은 문장으로 파싱한다.
+- 토큰을 분류한다. (lemmatizing tokens) 
+- 의존관계를 파싱한다.
+- 개체명과 명사구를 식별하고 추출하고 통합한다.
+
+
+## 설치방법 {#nlp-keyens-general-spacy-install}
+
+`Github`, `CRAN`에서 `spacyr` 팩키지를 설치한다. 윈도우 환경에서 설치할 경우 [Install spaCy](https://spacy.io/usage/#source-windows)를 참조하여 설치한다.
+
+RStudio 아이콘 위에 마우스를 올려 관리자 권한으로 실행시킨 후에 `spacy_install()` 함수를 호출하여 설치한다.
+
+```{r spacyr-install, eval=FALSE}
+## Github
+devtools::install_github("quanteda/spacyr", build_vignettes = FALSE)
+## CRAN
+install.packages("spacyr")
+
+## RStudio 관리자 권한
+library("spacyr")
+spacy_install()
+```
+
+## `spacyr` 헬로월드 {#nlp-keyens-general-spacy-helloworld}
+
+[`spacyr` 소품문](https://cran.r-project.org/web/packages/spacyr/vignettes/using_spacyr.pdf)에 담긴 사례를 활용하여 `tidytext`와 결합하여 개체명 인식을 시도해본다. 
+
+```{r spacyr-helloworld}
+library(tidyverse)
+library(tidytext)
+
+spacy_initialize()
+
+txt <- c(d1 = "spaCy is great at fast natural language processing.",
+         d2 = "Mr. Smith spent two years in North Carolina.")
+
+parsed_txt <- spacy_parse(txt, tag = TRUE, entity = TRUE, lemma = TRUE) 
+
+parsed_txt %>% 
+    unnest_tokens(word, token) %>% 
+    anti_join(stop_words) %>% 
+    filter(entity != "")
+
+spacy_finalize()
+```
+
+# 케인즈 vs 하이에크 저서 데이터 [^tidytextmining] {#nlp-keyens-hayek-sentiment-data}
+
+[^tidytextmining]: [Julia Silge and David Robinson (2018-12-21), "Text Mining with R - A Tidy Approach"](https://www.tidytextmining.com/)
+
+`pdf_text` 함수로 `.pdf` 파일을 R에서 처리 가능한 문자열을 뽑아내서 객체에 담아낸다.
+
+```{r topic-start-ingest-pdf-books-text-keynes}
+library(pdftools)
+library(tidyverse)
+library(tidytext)
+
+keynes_pdf <- pdf_text("data/generaltheory.pdf")
+hayek_pdf <- pdf_text("data/The-Road-to-Serfdom-F.A.-Hayek.pdf")
+
+keynes_df <- keynes_pdf %>% 
+  tbl_df() %>% 
+  mutate(book = "케인즈") %>% 
+  unnest_tokens(word, value)
+
+hayek_df <- hayek_pdf %>% 
+  tbl_df() %>% 
+  mutate(book = "하이에크") %>% 
+  unnest_tokens(word, value)
+
+data(stop_words)
+
+book_df <- bind_rows(keynes_df, hayek_df) %>% 
+  mutate(word = str_to_lower(word)) %>% 
+  anti_join(stop_words)
+```
+
+## 케인즈 - 일반이론 {#nlp-keyens-hayek-data-general}
+
+케인즈 "일반이론" 책을 각 Chapter 장으로 쪼갠다.
+이를 위해서 정규표현식을 동원해서 각 장의 첫번째 장을 추출하고 매칭되지 않는 것을 `NA`로 처리한 후에 `tidyr::fill()` 함수로 채워넣고 기타 불필요한 서문과 부록(Appendix)을 제거시킨다.
+
+```{r ingest-pdf-books-general}
+kbook_df <- keynes_pdf %>% 
+  tbl_df() %>% 
+  mutate(text = str_split(value, "\r\n")) %>% 
+  unnest(text) %>% 
+  select(-value) %>% 
+  mutate(book="케인즈")
+
+kbook_df %>% 
+  filter(str_detect(text, "^Chapter [0-9]+|^Appendix [0-3]")) %>% tail
+
+kbook_chap_df <- kbook_df %>% 
+  mutate(chapter = ifelse(str_detect(text, "^Chapter [0-9]{0,2}[^\r\n]$|^Appendix [0-3]"), text, NA)) %>% 
+  tidyr::fill(chapter) %>% 
+  filter(str_detect(chapter, "Chapter"))
+
+```
+
+
+## 각장(Chapter) &rarr; 단어(Word) {#nlp-keyens-hayek-general-word}
+
+앞서 "일반이론"을 각 장별로 나눠서 총 24장으로 구성된 것을 확인하고 제대로 검증하기 위해서 단어 갯수를 불용어 처리해서 세어본다.
+
+
+```{r ingest-pdf-books-general-word}
+kbbok_chap_df %>% 
+  select(book, chapter, text) %>% 
+  unnest_tokens(word, text) %>%
+    anti_join(stop_words) %>% 
+    count(word, sort=TRUE)
+
+```
+
+
+# 케인즈 일반이론 개체명 인식 {#nlp-keyens-general-ner}
+
+
+```{r ner-pdf-books-general}
+spacy_initialize()
+
+kbook_chap_spacyr_df <- kbook_chap_df %>% 
+  select(chapter, text) %>% 
+  group_by(chapter) %>% 
+  mutate(text = paste0(text, collapse = " ")) %>% 
+  ungroup() %>% 
+  sample_n(5) %>% 
+  mutate(ner = map(text, ~spacy_parse(., lemma = TRUE, entity = TRUE)))
+
+tibble(
+  
+)
+
+kbook_chap_spacyr_df %>% 
+  mutate(entity = map(ner, "entity") )
+
+
+```
