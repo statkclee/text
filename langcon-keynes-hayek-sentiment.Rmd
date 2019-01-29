@@ -1,0 +1,266 @@
+---
+layout: page
+title: xwMOOC 자연어 처리 - 텍스트
+subtitle: "케인즈 vs 하이에크 - 감성, 핵심어, 연관단어"
+author:
+    name: xwMOOC
+    url: https://www.facebook.com/groups/tidyverse/
+    affiliation: Tidyverse Korea
+date: "`r Sys.Date()`"
+output:
+  html_document: 
+    toc: yes
+    toc_float: true
+    highlight: tango
+    code_folding: show
+    number_section: true
+    self_contained: true
+editor_options: 
+  chunk_output_type: console
+---
+ 
+``` {r, include=FALSE}
+# source("tools/chunk-options.R")
+
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
+                    comment="", digits = 3, tidy = FALSE, prompt = FALSE, fig.align = 'center')
+
+```
+
+# 케인즈 vs 하이에크 저서 데이터 [^tidytextmining] {#nlp-keyens-hayek-sentiment-data}
+
+[^tidytextmining]: [Julia Silge and David Robinson (2018-12-21), "Text Mining with R - A Tidy Approach"](https://www.tidytextmining.com/)
+
+`pdf_text` 함수로 `.pdf` 파일을 R에서 처리 가능한 문자열을 뽑아내서 객체에 담아낸다.
+
+```{r sentiment-ingest-pdf-books-text-keynes}
+library(pdftools)
+library(tidyverse)
+library(tidytext)
+
+keynes_pdf <- pdf_text("data/generaltheory.pdf")
+hayek_pdf <- pdf_text("data/The-Road-to-Serfdom-F.A.-Hayek.pdf")
+
+keynes_df <- keynes_pdf %>% 
+  tbl_df() %>% 
+  mutate(book = "케인즈") %>% 
+  unnest_tokens(word, value)
+
+hayek_df <- hayek_pdf %>% 
+  tbl_df() %>% 
+  mutate(book = "하이에크") %>% 
+  unnest_tokens(word, value)
+
+data(stop_words)
+
+book_df <- bind_rows(keynes_df, hayek_df) %>% 
+  mutate(word = str_to_lower(word)) %>% 
+  anti_join(stop_words)
+```
+
+
+# 감성분석 {#nlp-keyens-hayek-books-sentiment}
+
+## 감성사전 {#nlp-keyens-hayek-books-sentiment-dic}
+
+일반이론과 노예의 길에 사용된 긍정어와 부정어를 살펴본다. `negative`, `positive`로 감성사전이 구성된 `bing`을 활용하여 가장 많이 언급된 긍부정어를 시각화한다.
+
+```{r ingest-pdf-books-sentiment-bing}
+# 2. 감성 분석 -------------------
+## 2.1. 긍정/부정 단어 -----------
+senti_word_counts <- book_df %>% 
+    inner_join(get_sentiments("bing")) %>% 
+    count(book, word, sentiment)
+
+top_senti_word_counts <- senti_word_counts %>% 
+    group_by(book, sentiment) %>% 
+    top_n(10, n) %>% 
+    ungroup()
+
+top_senti_word_counts %>% 
+  group_by(book) %>% 
+  ggplot(aes(x=fct_reorder2(word, sentiment, -n), y=n, fill = book)) +
+    geom_col(show.legend = FALSE) +
+    facet_wrap(book~sentiment, scales = "free") +  
+    coord_flip() +
+    labs(x="", y="")
+```
+
+`nrc` 감성사전을 활용하여 각 감정을 표현하는데 많이 사용된 단어를 상위 10개씩 각 책으로부터 뽑아보자. 
+
+
+```{r ingest-pdf-books-sentiment-nrc}
+library(extrafont)
+loadfonts()
+
+book_df %>%
+    inner_join(get_sentiments("nrc")) %>%
+    count(book, word, sentiment) %>%
+    group_by(book, sentiment) %>%
+    top_n(10, n) %>%
+    # ungroup() %>%
+    ggplot(aes(x=fct_reorder2(word, book, -n), y=n, fill = book)) +
+      geom_col(show.legend = FALSE) +
+      facet_wrap(book ~ sentiment, scales = "free") +
+      coord_flip() +
+      theme_bw(base_family = "NanumGothic") +
+      theme(legend.position = "none") +
+      labs(x="", y="", fill="책제목")
+```
+
+## 감성 비교 {#nlp-keyens-hayek-books-sentiment-dic-comp}
+
+`nrc` 사전과 `comparison.cloud()` 함수를 조합하여 케인즈와 하이에크가 책을 저술하면서 마음에 담고 있는 긍정/부정 단어를 단어구름을 통해 시각화할 수 있다.
+
+```{r ingest-pdf-books-sentiment-comp}
+library(reshape2)
+library(wordcloud)
+
+par(mfrow=c(1,2))
+
+keynes_senti_df <- senti_word_counts %>% 
+  filter(book == "케인즈") %>% 
+  select(-book)
+
+keynes_senti_df %>% 
+  acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+  comparison.cloud(title.size = 2,  scale = c(2,  0.2), 
+                   random.order = FALSE, colors = c("gray20", "gray80"),
+                   max.words = 200)
+
+hayek_senti_df <- senti_word_counts %>% 
+  filter(book != "케인즈") %>% 
+  select(-book)
+
+hayek_senti_df %>% 
+  acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+  comparison.cloud(title.size = 2,  scale = c(2,  0.2), 
+                   random.order = FALSE, colors = c("gray20", "gray80"),
+                   max.words = 200)
+```
+
+
+# 저서 핵심용어 - TF-IDF {#nlp-keyens-hayek-books-tfidf}
+
+TF-IDF(Term Frequency - Inverse Document Frequency)는 텍스트 마이닝에서 이용하는 가중치로, 여러 문서로 이루어진 문서군이 있을 때 어떤 단어가 특정 문서 내에서 얼마나 중요한 것인지를 나타내는 통계적 수치로 문서의 핵심어를 추출하는 용도로 사용할 수 있다. 일반이론과 노예의 길 문서가 두권의 책이라 케이즈와 하이에크를 옹호하는 책 혹은 문서를 더 확충할 경우 핵심용어를 식벽하는데 큰 도움이 될 수 있다.
+
+```{r ingest-pdf-books-sentiment-tfidf}
+book_word_df <- book_df %>% 
+  count(book, word, sort=TRUE)
+
+total_word_df <- book_word_df %>% 
+  group_by(book) %>% 
+  summarize(total = sum(n))
+
+book_total_word_df <- left_join(book_word_df, total_word_df)
+
+book_total_word_df
+
+book_total_word_df <- book_total_word_df %>%
+  bind_tf_idf(word, book, n)
+
+book_total_word_df %>% 
+  select(-total) %>% 
+  arrange(desc(tf_idf))
+```
+
+케이즈와 하이에크의 두 저서만을 대상으로 TF-IDF 수치가 높은 단어를 상위 15개 추출하여 막대그래프로 시각화한다.
+
+```{r ingest-pdf-books-sentiment-tfidf-viz}
+book_total_word_df %>%
+  arrange(desc(tf_idf)) %>%
+  mutate(word = factor(word, levels = rev(unique(word)))) %>% 
+  group_by(book) %>% 
+  top_n(15) %>% 
+  ungroup %>%
+    ggplot(aes(word, tf_idf, fill = book)) +
+    geom_col(show.legend = FALSE) +
+    labs(x = NULL, y = "tf-idf") +
+    facet_wrap(~book, ncol = 2, scales = "free") +
+    coord_flip()
+```
+
+
+# 단어 연관성 - `ngram` {#nlp-keyens-hayek-books-tfidf}
+
+단어 연관성을 살펴보기 위해서 `n-gram`기법을 사용한다. 단어를 2개씩 나눠서 살펴본다.
+
+```{r ingest-pdf-books-sentiment-ngram}
+keynes_bigram_df <- keynes_pdf %>% 
+  tbl_df() %>% 
+  mutate(book = "케인즈") %>% 
+  unnest_tokens(bigram, value, token="ngrams", n=2)
+
+hayek_bingram_df <- hayek_pdf %>% 
+  tbl_df() %>% 
+  mutate(book = "하이에크") %>% 
+  unnest_tokens(bigram, value, token="ngrams", n=2)
+
+bigram_book_df <- bind_rows(keynes_bigram_df, hayek_bingram_df) %>% 
+  mutate(bigram = str_to_lower(bigram))
+
+bigram_book_df %>% 
+  count(book, bigram, sort=TRUE)
+```
+
+불용어가 많아서 `stop_words`처럼 다음과 같이 `bi-gram` 불용어처리를 한다.
+먼저 `bigram`을 두 단어로 쪼갠 후에 불용어가 들어간 단어를 추려낸다.
+그리고 나서 다시 `unite()` 함수로 `bigram` 형태로 다시 되돌린다.
+
+```{r ingest-pdf-books-sentiment-ngram-sw}
+bigram_book_sep_df <- bigram_book_df %>%
+  separate(bigram, c("word1", "word2"), sep = " ")
+
+bigram_book_no_stopword_df <- bigram_book_sep_df %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word)
+
+bigram_book_clean_df <- bigram_book_no_stopword_df %>%
+  unite(bigram, word1, word2, sep = " ")
+
+bigram_book_clean_df
+```
+
+`bigram` 을 통해 두책에서 언급된 핵심용어를 추리기 위해서 `tf-idf` 측도를 동원하여 상위 15개 단어를 추려서 시각화하면 두 경제학자의 확연한 시각차를 확인할 수 있다.
+
+```{r ingest-pdf-books-sentiment-ngram-eda}
+bigram_book_clean_df %>% 
+  count(book, bigram) %>% 
+  bind_tf_idf(bigram, book, n) %>% 
+  arrange(desc(tf_idf)) %>% 
+  group_by(book) %>% 
+  top_n(15, wt=tf_idf) %>% 
+  ggplot(aes(x=fct_reorder(bigram, tf_idf), y=tf_idf, fill=bigram)) +
+    geom_col(show.legend = FALSE) +
+    facet_wrap(~ book, ncol = 2, scales = "free") +
+    coord_flip() +
+    labs(x = NULL, y = "tf-idf")
+```
+
+# 단어 연관성 - 네트워크 {#nlp-keyens-hayek-books-tfidf}
+
+`bigram`으로 자료구조를 갖추게 되면 자연스럽게 `from`, `to` 형태 네트워크 자료구조와 동일하게 되어 `igraph` 팩키지를 통해 데이터프레임을 네트워크 자료형으로 변환시키고 이를 `ggraph` 팩키지로 시각화하는 것이 가능하다.
+
+```{r ingest-pdf-books-sentiment-network}
+library(igraph)
+library(ggraph)
+library(extrafont)
+loadfonts()
+
+bigram_graph <- bigram_book_no_stopword_df %>% 
+  count(book, word1, word2, sort=TRUE) %>% 
+  mutate(n = ifelse(book=="하이에크", n*2, n)) %>% 
+  filter(n > 15) %>% 
+  select(word1, word2, n, book) %>% 
+  graph_from_data_frame()
+
+a <- grid::arrow(type = "closed", length = unit(.10, "inches"))
+
+ggraph(bigram_graph, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                 arrow = a, end_cap = circle(.05, 'inches')) +
+  geom_node_point(color = "lightpink", size = 2.5) +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+  theme_bw(base_family = "NanumGothic") +
+  facet_wrap(~book)
+```
