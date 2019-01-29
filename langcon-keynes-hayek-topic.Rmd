@@ -1,0 +1,212 @@
+---
+layout: page
+title: xwMOOC 자연어 처리 - 텍스트
+subtitle: "케인즈 vs 하이에크 - 토픽 모형"
+author:
+    name: xwMOOC
+    url: https://www.facebook.com/groups/tidyverse/
+    affiliation: Tidyverse Korea
+date: "`r Sys.Date()`"
+output:
+  html_document: 
+    toc: yes
+    toc_float: true
+    highlight: tango
+    code_folding: show
+    number_section: true
+    self_contained: true
+editor_options: 
+  chunk_output_type: console
+---
+ 
+``` {r, include=FALSE}
+# source("tools/chunk-options.R")
+
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
+                    comment="", digits = 3, tidy = FALSE, prompt = FALSE, fig.align = 'center')
+
+```
+
+# 토픽 모형(topic modeling) [^topic-modeling] {#nlp-keyens-hayek-books-topic}
+
+[^topic-modeling]: [단어구름에서 토픽모형, From World Cloud to Toptic Modeling](https://statkclee.github.io/text/silge-topic-modeling.html)
+
+문서가 많은 경우 혹은 책과 같이 다수 장(chapter)으로 구성된 경우 이를 추상화해서 토픽(topic, 주제)를 추출할 필요가 있다.
+Latent Dirichlet allocation (LDA)가 토픽 모형으로 많이 알려져 있으며 많이 사용되고 있다.
+
+- 모든 문서는 화제(topic)가 뒤섞인 것이다. (Every document is a mixture of topics.), 즉, 문서 각각은 몇개 화제가 일정 비율로 뒤섞인 것으로 볼 수 있다. 예를 들어, 첫번째 문서는 화제 1이 10%, 화제 2가 90%, 반면에서 두번째 문서는 화제 1이 70%, 화제3이 20%, 화제2가 10% 뒤섞인 것으로 본다.
+- 모든 화제(topic)은 단어(word)가 뒤섞인 것이다. (Every topic is a mixture of words.), 즉, OO일보 2019-01-29 일자 뉴스기사는 "정치"에서 화제를 하나뽑고, "연예"에서 화제를 하나 뽑아 작성되었다. 정치 화제에서 가장 많이 회자된 단어는 "대통령", "국회", "정부"를 들 수 있고, 연예 화제에서는 "영화", "SNS", "배우"를 둘 수 있다. 특히 "예산" 같은 단어는 정치나 연예 모두 공통으로 사용되는 중요한 단어가 될 수 있다.
+
+# 케인즈 vs 하이에크 저서 데이터 [^tidytextmining] {#nlp-keyens-hayek-sentiment-data}
+
+[^tidytextmining]: [Julia Silge and David Robinson (2018-12-21), "Text Mining with R - A Tidy Approach"](https://www.tidytextmining.com/)
+
+`pdf_text` 함수로 `.pdf` 파일을 R에서 처리 가능한 문자열을 뽑아내서 객체에 담아낸다.
+
+```{r topic-start-ingest-pdf-books-text-keynes}
+library(pdftools)
+library(tidyverse)
+library(tidytext)
+
+keynes_pdf <- pdf_text("data/generaltheory.pdf")
+hayek_pdf <- pdf_text("data/The-Road-to-Serfdom-F.A.-Hayek.pdf")
+
+keynes_df <- keynes_pdf %>% 
+  tbl_df() %>% 
+  mutate(book = "케인즈") %>% 
+  unnest_tokens(word, value)
+
+hayek_df <- hayek_pdf %>% 
+  tbl_df() %>% 
+  mutate(book = "하이에크") %>% 
+  unnest_tokens(word, value)
+
+data(stop_words)
+
+book_df <- bind_rows(keynes_df, hayek_df) %>% 
+  mutate(word = str_to_lower(word)) %>% 
+  anti_join(stop_words)
+```
+
+## 케인즈 - 일반이론 {#nlp-keyens-hayek-data-general}
+
+케인즈 "일반이론" 책을 각 Chapter 장으로 쪼갠다.
+이를 위해서 정규표현식을 동원해서 각 장의 첫번째 장을 추출하고 매칭되지 않는 것을 `NA`로 처리한 후에 `tidyr::fill()` 함수로 채워넣고 기타 불필요한 서문과 부록(Appendix)을 제거시킨다.
+
+```{r ingest-pdf-books-general}
+kbook_df <- keynes_pdf %>% 
+  tbl_df() %>% 
+  mutate(text = str_split(value, "\r\n")) %>% 
+  unnest(text) %>% 
+  select(-value) %>% 
+  mutate(book="케인즈")
+
+kbook_df %>% 
+  filter(str_detect(text, "^Chapter [0-9]+|^Appendix [0-3]")) %>% tail
+
+kbbok_chap_df <- kbook_df %>% 
+  mutate(chapter = ifelse(str_detect(text, "^Chapter [0-9]{0,2}[^\r\n]$|^Appendix [0-3]"), text, NA)) %>% 
+  tidyr::fill(chapter) %>% 
+  filter(str_detect(chapter, "Chapter"))
+
+```
+
+
+## 각장(Chapter) &rarr; 단어(Word) {#nlp-keyens-hayek-general-word}
+
+앞서 "일반이론"을 각 장별로 나눠서 총 24장으로 구성된 것을 확인하고 제대로 검증하기 위해서 단어 갯수를 불용어 처리해서 세어본다.
+
+
+```{r ingest-pdf-books-general-word}
+kbbok_chap_df %>% 
+  select(book, chapter, text) %>% 
+  unnest_tokens(word, text) %>%
+    anti_join(stop_words) %>% 
+    count(word, sort=TRUE)
+
+```
+
+`ggrepel` 팩키지를 활용하여 총 24장에 걸쳐 가장 많이 회자되는 단어가 어떤 것이 있는지 각 장별로 15개씩 뽑아서 이를 시각화한다.
+
+```{r ingest-pdf-books-general-word-chapter, fig.width=10, fig.height=8}
+library(ggrepel)
+library(extrafont)
+loadfonts()
+
+kbbok_chap_df %>% 
+  select(chapter, text) %>% 
+  mutate(chapter = factor(chapter, levels = paste("Chapter", seq(1:24)))) %>% 
+  unnest_tokens(word, text) %>%
+    anti_join(stop_words) %>% 
+    group_by(chapter) %>% 
+    count(chapter, word, sort=TRUE) %>% 
+    top_n(15, wt=n) %>% 
+    ggplot(aes(x = 1, y = 1, size = n, label = word)) +
+      geom_text_repel(segment.size = 0, force = 100, segment.color = 'white', segment.alpha = 0.01) +
+      scale_size(range = c(2, 10), guide = FALSE) +
+      scale_y_continuous(breaks = NULL) +
+      scale_x_continuous(breaks = NULL) +
+      labs(x = '', y = '', title = "일반 이론 각장별 단어구름") +
+      facet_wrap(~ chapter) +
+      theme_classic(base_family="NanumGothic") +
+      theme(strip.text = element_text(color="red", size=16, lineheight=5.0),
+               plot.title = element_text(colour = "blue",
+               size = 18, hjust = 0.5, vjust = 0.8, angle = 0)) 
+```
+
+
+# 각장(Chapter) 핵심용어 - TF-IDF {#nlp-keyens-hayek-tfidf-chapter}
+
+주제(topic) 모형으로 들어가기 전에 각 장별로 사용된 핵심용어가 어떤 것이 있는지 살펴보자.
+이를 위해서 `TF-IDF`를 사용한다. 일반이론은 24장으로 구성되어 있어 TF-IDF를 한장에 시각화하는데 한계가 있어 각 장별로 핵심용어 7개만 추출한다.
+
+```{r ingest-pdf-books-general-tf-idf, fig.width=10, fig.height=8}
+library(drlib)
+
+kbook_tf_idf <- kbbok_chap_df %>%
+  select(-book) %>% 
+  unnest_tokens(word, text) %>%
+  anti_join(stop_words) %>% 
+  count(chapter, word, sort = TRUE) %>%
+  bind_tf_idf(word, chapter, n) %>%
+  arrange(-tf_idf) %>%
+  group_by(chapter) %>%
+  top_n(7) %>%
+  ungroup()
+
+kbook_tf_idf %>%
+    mutate(word = reorder_within(word, tf_idf, chapter)) %>%
+    mutate(chapter = factor(chapter, levels = paste("Chapter", seq(1:24)))) %>% 
+    ggplot(aes(word, tf_idf, fill = chapter)) +
+    geom_col(alpha = 0.8, show.legend = FALSE) +
+    facet_wrap(~ chapter, scales = "free", ncol = 4) +
+    scale_x_reordered() +
+    coord_flip() +
+    theme_classic(base_family="NanumGothic") +
+    theme(strip.text=element_text(size=11)) +
+    labs(x = NULL, y = "tf-idf",
+         title = "일반이론 각 장별로 가장 높은 tf-idf 단어")
+
+```
+
+# 일반이론 주제(topic) [^topic-stm] {#nlp-keyens-hayek-topic-chapter}
+
+[^topic-stm]: [JULIA SILGE (Sep 8, 2018), "TRAINING, EVALUATING, AND INTERPRETING TOPIC MODELS"](https://juliasilge.com/blog/evaluating-stm/)
+
+`tf-idf` 분석을 이어 토픽 모형으로 진행하는데 팩키지가 필요한데 과거 속도, 자바 의존성이 문제가 되어 번거러웠으나, `stm` 팩키지의 등장으로 C++로 작성되어 자바 의존성과 속도 문제가 모두 해결되고 전문가들의 평판도 좋다.
+
+`stm()`함수는 인자로 문서-단어 행렬(document-term matrix) 혹은 `quanteda` 팩키지 희소 행렬(sparse matrix) 혹은 `dfm` 자료형을 전달하여야 한다. 깔끔한 텍스트 데이터로 정제된 것을 문서(스토리)-단어 행렬로 `count()`, `cast_dfm()` 함수를 연결하여 구현해낸다. 동일하게 `count()`, `cast_sparse()` 함수를 연결하여 희소행렬도 구현할 수 있다.
+
+```{r ingest-pdf-books-general-topic}
+library(quanteda)
+library(stm)
+
+kbook_dfm <- kbbok_chap_df %>%
+  select(-book) %>% 
+  unnest_tokens(word, text) %>%
+  anti_join(stop_words) %>% 
+  count(chapter, word, sort = TRUE) %>%
+  cast_dfm(chapter, word, n)
+
+ktopic_model <- stm(kbook_dfm, K = 6, 
+                   verbose = FALSE, init.type = "Spectral")
+
+td_beta <- tidy(ktopic_model)
+
+td_beta %>%
+    group_by(topic) %>%
+    top_n(10, beta) %>%
+    ungroup() %>%
+    mutate(topic = paste0("Topic ", topic),
+           term = reorder_within(term, beta, topic)) %>%
+    ggplot(aes(term, beta, fill = as.factor(topic))) +
+    geom_col(alpha = 0.8, show.legend = FALSE) +
+    facet_wrap(~ topic, scales = "free_y") +
+    coord_flip() +
+    scale_x_reordered() +
+    theme_classic(base_family="NanumGothic") +
+    labs(x = NULL, y = expression(beta),
+         title = "일반이론 각 토픽(주제)별로 가장 높은 확률을 갖는 단어",
+         subtitle = "단어별로 다른 토픽에 연관되어 있음")
+
+```
