@@ -213,7 +213,7 @@ book_df %>%
 `plotrix` 팩키지 `pyramid.plot()` 함수를 사용해서 케인즈와 하이에크가 가장 많이 사용한 단어 중 빈도수에서 차이가 큰 단어를 15개 뽑아 피라미드 막대그래프로 시각화한다.
 케인즈 책에 사용된 단어가 하이에크 책에 사용된 단어보다 2배가량 많아 이를 `하이에크`에 2를 곱하여 일부 보정한다.
 
-```{r ingest-pdf-books-eda-pyramid}
+```{r ingest-pdf-books-eda-pyramid, fig.width=10}
 library(plotrix)
 par(family = 'NanumGothic')
 
@@ -229,7 +229,7 @@ book_pyramid_df <- book_df %>%
 
 pyramid.plot(book_pyramid_df$`케인즈`, book_pyramid_df$`하이에크`, 
              labels = book_pyramid_df$word, 
-             gap = 77, 
+             gap = 107, 
              top.labels = c("케인즈", "공통단어", "하이에크"), 
              main = "케인즈 vs 하이에크 공통단어", unit = NULL)
 
