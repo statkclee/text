@@ -75,7 +75,8 @@ yt_oauth(yt_app_id, yt_app_pw)
 
 yt_channel <- list("TV홍카콜라" = "UCfmicRK2-WdZMVQDrfcitLA",
                    "민주당씀"   = "UCoQD2xsqwzJA93PTIYERokg",
-                   "정의당TV"   = "UC4KdOy46f0HCJBqTiq7MLPg")
+                   "정의당TV"   = "UC4KdOy46f0HCJBqTiq7MLPg",
+                   "노무현재단" = "UCJS9VvReVkplPwCIbxnbsjQ")
 
 # 1. 데이터 가져오기 -----
 ## 1.1 유튜브 채널 통계 -----
@@ -161,7 +162,7 @@ yt_channel_stat_tbl <- read_rds("data/yt_channel_stat_tbl.rds")
 yt_channel_stat_tbl %>% 
   unnest(stat) %>% 
   mutate_at(vars(contains("Count")), as.numeric) %>% 
-  mutate(`channel` = factor(`channel`, levels=c("민주당씀", "TV홍카콜라", "바른미래당", "정의당TV"))) %>% 
+  mutate(`channel` = factor(`channel`, levels=c("민주당씀", "TV홍카콜라", "노무현재단", "정의당TV"))) %>% 
   ggplot(aes(x=viewCount, y=likeCount, color=channel)) +
     geom_point() +
     scale_y_log10(labels=scales::comma) +

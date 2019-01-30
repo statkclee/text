@@ -71,6 +71,7 @@ spacy_install()
 ```{r spacyr-helloworld}
 library(tidyverse)
 library(tidytext)
+library(spacyr)
 
 spacy_initialize()
 
@@ -148,20 +149,24 @@ kbook_chap_df <- kbook_df %>%
 
 
 ```{r ingest-pdf-books-general-word}
-kbbok_chap_df %>% 
+kbook_chap_df %>% 
   select(book, chapter, text) %>% 
   unnest_tokens(word, text) %>%
     anti_join(stop_words) %>% 
     count(word, sort=TRUE)
-
 ```
 
 
 # 케인즈 일반이론 개체명 인식 {#nlp-keyens-general-ner}
 
+일반이론 모든 장에 대해 개체명 인식작업을 수행하게 되면 시간이 많이 걸려 무작위로 5장만 추출하여 개체명인식 작업을 수행한다. [`spaCy` Annotation Specifications](https://spacy.io/api/annotation)을 참조하여 가장 많이 언급된 사람을 찾아본다. 이를 위해서 각 장별로 `spacy_parse()` 함수로 개체명 인식작업을 수행하고 
+데이터프레임에서 개체를 추출한다. 가장 많이 추출된 개체명에 대한 빈도수를 뽑아본다.
 
-```{r ner-pdf-books-general}
+
+```{r ner-pdf-books-general-ner}
 spacy_initialize()
+
+set.seed(777)
 
 kbook_chap_spacyr_df <- kbook_chap_df %>% 
   select(chapter, text) %>% 
@@ -169,14 +174,35 @@ kbook_chap_spacyr_df <- kbook_chap_df %>%
   mutate(text = paste0(text, collapse = " ")) %>% 
   ungroup() %>% 
   sample_n(5) %>% 
-  mutate(ner = map(text, ~spacy_parse(., lemma = TRUE, entity = TRUE)))
+  mutate(ner = map(text, ~spacy_parse(., entity = TRUE)))
 
-tibble(
-  
-)
+spacy_finalize()
 
-kbook_chap_spacyr_df %>% 
-  mutate(entity = map(ner, "entity") )
+entity_df <- kbook_chap_spacyr_df %>% 
+  mutate(entity = map(ner, ~ count(., entity, sort = TRUE) )) %>% 
+  unnest(entity)
 
+entity_df %>% 
+  group_by(entity) %>% 
+  summarise(entity_sum = sum(n)) %>% 
+  arrange(desc(entity_sum)) %>% 
+  filter(entity != "")
+```
+
+개체명에서 "PERSON"을 추출하여 가장 많이 언급된 사람을 살펴본다.
+
+```{r ner-pdf-books-general-ner-person}
+person_df <- kbook_chap_spacyr_df %>% 
+  mutate(person_ent = map(ner, ~ filter(., str_detect(entity, "PERSON")) )) %>% 
+  unnest(person_ent)
+
+person_df %>% 
+  group_by(chapter, lemma) %>% 
+  summarise(freq = n()) %>% 
+  filter(str_length(lemma) > 3,
+         str_detect(lemma, "[[::alpha::]]")) %>% 
+  arrange(desc(freq)) %>% 
+  spread(chapter, freq, fill=0) %>% 
+  DT::datatable()
 
 ```
