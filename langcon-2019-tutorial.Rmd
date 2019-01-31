@@ -33,13 +33,22 @@ knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
 
 - R 개발자가 알아야 되는 보안
 - 유튜브 API
-- 유튜브 댓글 [자료구조](https://statkclee.github.io/parallel-r/r-parallel-fp-ds.html)
-- SNS 트래픽 분석
-- 탐색적 자연어 텍스트 분석
+- 유튜브 댓글: [자료구조](https://statkclee.github.io/parallel-r/r-parallel-fp-ds.html)
+- SNS 트래픽 분석: [재보선 2019 선거 - "유튜브"](https://statkclee.github.io/text/nlp-youtube-comment.html)
+- 자연어처리 (파이썬)
+    1. [자연어 처리 입문](nlp-intro-python.html) - 텍스트 &rarr; 단어주머니(Bag of Words) 
+- 자연어처리 (영문)
+    - 텍스트 마이닝
+        1. [케인즈 vs 하이에크](langcon-keynes-hayek.html)
+        1. [케인즈 vs 하이에크 - 감성, 핵심어, 연관단어](langcon-keynes-hayek-sentiment.html)
+        1. [케인즈 vs 하이에크 - 토픽모형](langcon-keynes-hayek-topic.html)
+        1. [케인즈 vs 하이에크 - `spacyr`](langcon-keynes-hayek-spacyr.html)
+    - 모형
+        - [SMS 스팸분류 - Random Forest](https://statkclee.github.io/text/nlp-spam-machine-learning.html)
+        - [캐글 - 전자상거래 옷 리뷰](https://statkclee.github.io/text/text-kaggle-ecommerce-review.html)
+- 자연어처리 - 한국어
     - [네이버 뉴스](https://statkclee.github.io/text/nlp-naver-news.html)
-- 모형
-    - [SMS 스팸분류 - Random Forest](https://statkclee.github.io/text/nlp-spam-machine-learning.html)
-    - [캐글 - 전자상거래 옷 리뷰](https://statkclee.github.io/text/text-kaggle-ecommerce-review.html)
+    - [알릴레요 vs. 홍카콜라 - 댓글 분류](youtube-channel-comment-classification.html)
 
 <img src="fig/langcon-tutorial.png" alt="튜토리얼 개요" width="100%" />
 
@@ -64,12 +73,30 @@ AWS_SECRET_ACCESS_KEY <- "pxxx"
 
 [xwMOOC, "R 구글 애널리틱스(GA)"](https://statkclee.github.io/deep-learning/r-ga.html) 참조하여 유튜브 API 데이터를 가져올 수 있도록 한다.
 
-
 # SNS 트래픽 분석 [^tutorial-youtube-api] {#tutorial-youtube-api-eda}  
 
 [^tutorial-youtube-api]: [xwMOOC, "유트브 댓글"](https://statkclee.github.io/text/nlp-youtube-comment.html)
 
 [xwMOOC, "유트브 댓글"](https://statkclee.github.io/text/nlp-youtube-comment.html)
 
-# 모형 {#tutorial-youtube-api-model}  
+# 자연어처리 (파이썬) {#tutorial-youtube-api-python}  
+
+[자연어 처리 입문](nlp-intro-python.html) - 텍스트 &rarr; 단어주머니(Bag of Words) 
+
+# 자연어처리 (영문) {#tutorial-youtube-api-english}
+
+- 텍스트 마이닝
+    1. [케인즈 vs 하이에크](langcon-keynes-hayek.html)
+    1. [케인즈 vs 하이에크 - 감성, 핵심어, 연관단어](langcon-keynes-hayek-sentiment.html)
+    1. [케인즈 vs 하이에크 - 토픽모형](langcon-keynes-hayek-topic.html)
+    1. [케인즈 vs 하이에크 - `spacyr`](langcon-keynes-hayek-spacyr.html)
+
+# 자연어처리 (모형) - 분류 {#tutorial-youtube-api-english}
+
+- 한국어
+    - [SMS 스팸분류 - Random Forest](https://statkclee.github.io/text/nlp-spam-machine-learning.html)
+    - [캐글 - 전자상거래 옷 리뷰](https://statkclee.github.io/text/text-kaggle-ecommerce-review.html)
+- 영어
+    - [네이버 뉴스](https://statkclee.github.io/text/nlp-naver-news.html)
+    - [알릴레요 vs. 홍카콜라 - 댓글 분류](youtube-channel-comment-classification.html)
 
