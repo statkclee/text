@@ -43,18 +43,21 @@ title: 자연어 처리 - 텍스트
     1. [캐글 - 전자상거래 옷 리뷰](text-kaggle-ecommerce-review.html)
 1. **한국어**
     1. **한국어 R Meetup - 류충현**: [대통령 연설문 - 데이터 긁어오기](nlp-president-crawl.html), [대통령 연설문 - DTM 만들기](nlp-president-dtm.html)
-    1. [유트브 댓글](nlp-youtube-comment.html)
-        1. [네이버 뉴스](nlp-naver-news.html)
-        1. [깔끔한 텍스트 (Tidytext) - 신년기자회견(2019)](nlp-tidytext-moon-speech.html)
-    1. [네이버 뉴스 - RmecabKo (형태소 분석)](nlp-naver-news-mecab.html)    
 1. **[R 파이썬을 만나다.](text-r-meet-python.html)**
-    1. **[데이터과학 - 파이썬 자료구조](text-python-datatype.html)**
     1. [자연어 처리 입문](nlp-intro-python.html) - 텍스트 &rarr; 단어주머니(Bag of Words) 
     1. [자연어 처리 중급](nlp-intermediate-python.html) 
+    1. [데이터과학 - 파이썬 자료구조](text-python-datatype.html)
 1. [LangCon - 자연어 처리의 화장을 하지 않은 얼굴: 튜토리얼](langcon-2019-tutorial.html)
-    1. [케인즈 vs 하이에크](langcon-keynes-hayek.html)
-    1. [케인즈 vs 하이에크 - 감성, 핵심어, 연관단어](langcon-keynes-hayek-sentiment.html)
-    1. [케인즈 vs 하이에크 - 토픽모형](langcon-keynes-hayek-topic.html)
-    1. [케인즈 vs 하이에크 - `spacyr`](langcon-keynes-hayek-spacyr.html)
-
-
+    - 영문
+        1. [케인즈 vs 하이에크](langcon-keynes-hayek.html)
+        1. [케인즈 vs 하이에크 - 감성, 핵심어, 연관단어](langcon-keynes-hayek-sentiment.html)
+        1. [케인즈 vs 하이에크 - 토픽모형](langcon-keynes-hayek-topic.html)
+        1. [케인즈 vs 하이에크 - `spacyr`](langcon-keynes-hayek-spacyr.html)
+    - 유튜브
+        1. 한글 
+            1. [네이버 뉴스](nlp-naver-news.html)
+            1. [깔끔한 텍스트 (Tidytext) - 신년기자회견(2019)](nlp-tidytext-moon-speech.html)
+            1. [네이버 뉴스 - RmecabKo (형태소 분석)](nlp-naver-news-mecab.html)           
+        1. [유트브 댓글](nlp-youtube-comment.html)
+        1. [알릴레요 vs. 홍카콜라 - 댓글 분류](youtube-channel-comment-classification.html)
+ 
