@@ -27,7 +27,9 @@ knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
 
 library(tuber)
 library(tidyverse)
-
+library(tidytext)
+library(caret)
+library(glmnet)
 ```
 
 # 유튜브 댓글 분류기 {#red-vs-blue}
@@ -352,11 +354,101 @@ hy_bow_tidy_df %>%
 ```
 
 
+
+
+# 댓글 사용자 예측 {#red-vs-blue-video-classify-w-cart}
+
+
+유튜브 채널(TV홍카콜라, 알릴레오)에 달린 댓글을 바탕으로 유튜브 채널을 예측하는 분류기를 만들어본다. 이를 
+
+## 댓글 사용자 예측 BaseTable {#red-vs-blue-video-classify-w-cart-bt}
+
+댓글 사용자 예측 BaseTable을 댓글로부터 제작한다. 
+그리고 나서 이를 나이브베이즈 예측모형을 통해 제작한다.
+"알릴레오" 유튜브 채널에 댓글이 없는 동영상이 많아서 이를 제거한다.
+
+
+```{r red-vs-yoo-traffic-comment-classify-data}
+hy_channel_stat_comment_df %>% 
+  select(channel_name, comment) %>% 
+  mutate(check_type = map_lgl(comment, is.data.frame)) %>% 
+  count(check_type, channel_name) %>% 
+  mutate(pcnt = n/sum(n))
+
+```
+
+댓글을 뽑아내서 형태소 분석을 한 후에 예측모형에 사용된 `basetable`을 제작한다.
+
+```{r red-vs-yoo-traffic-comment-classify-data2, eval=FALSE}
+library(tidytext)
+library(NLP4kec)
+library(caret)
+library(glmnet)
+
+hy_text_basetable <- hy_channel_stat_comment_df %>% 
+  select(id, channel_name, comment) %>% 
+  mutate(check_type = map_lgl(comment, is.data.frame)) %>% 
+  filter(check_type) %>% 
+  select(-check_type)
+
+hy_text_basetable_df <- hy_text_basetable %>% 
+  unnest(comment) %>% 
+  select(id, channel_name, textDisplay) %>% 
+  mutate(bow = r_parser_r(textDisplay, language = "ko", useEn = TRUE))
+
+hy_text_basetable_df %>% write_rds("data/hy_text_basetable_df.rds")
+
+```
+
+`glmnet` 팩키지 `cv.glmnet()` 함수를 사용해서 유튜브 채널에 붙는 댓글을 넣으면 채널을 예측하는 댓글 예측모형을 제작할 수 있다.
+
+
+```{r red-vs-yoo-traffic-comment-classify-fit}
+library(doSNOW)
+
+hy_text_basetable <- hy_channel_stat_comment_df %>% 
+  select(id, channel_name, comment) %>% 
+  mutate(check_type = map_lgl(comment, is.data.frame)) %>% 
+  filter(check_type) %>% 
+  select(-check_type)
+
+## NLP4kec --> 형태소 분석
+
+hy_basetable_df  <- read_rds("data/hy_text_basetable_df.rds")
+
+hy_basetable_bow_df <- hy_basetable_df %>% 
+  select(id, bow) %>% 
+  mutate(bow = map(bow, str_split, pattern=" ") ) %>% 
+  unnest(bow) %>% 
+  unnest(bow) 
+
+hy_basetable_sparse <- hy_basetable_bow_df %>% 
+  # filter(str_detect(bow, "[가-흫].+"), str_length(bow) > 1) %>%
+  count(id, bow, sort = TRUE) %>% 
+  cast_sparse(id, bow, n)
+
+cl <- makeCluster(8, type = "SOCK")
+registerDoSNOW(cl)
+
+glmnet_mod <- cv.glmnet(hy_basetable_sparse, as.factor(hy_text_basetable$channel_name), 
+                        family = "binomial", 
+                        alpha=0, nfolds=5, parallel=TRUE, intercept=TRUE,
+                        type.measure="class")
+
+stopCluster(cl)
+
+## 혼동행렬 -----
+hy_predict <- predict(glmnet_mod, newx = hy_basetable_sparse, s = "lambda.min",type = "class")
+confusionMatrix(as.factor(hy_predict), as.factor(hy_text_basetable$channel_name))
+
+```
+
+
 # 댓글 사용자 네트워크 분석 {#red-vs-blue-video-classify-w-network}
 
 
 
 ```{r red-vs-yoo-traffic-comment}
-
+library(igraph)
+library(ggraph)
 ```
-
