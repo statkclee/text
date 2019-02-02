@@ -41,6 +41,7 @@ title: 자연어 처리 - 텍스트
     1. [SMS 스팸분류 - Random Forest](nlp-spam-machine-learning.html)
     1. [정규표현식에서 워드2벡(Word2Vec)](nlp-regex-word2vec.html)
     1. [캐글 - 전자상거래 옷 리뷰](text-kaggle-ecommerce-review.html)
+    1. [재난 트윗 분류기 - `tidytext`와 `caret`](text-twitter-tidytext-caret.html)
 1. **한국어**
     1. **한국어 R Meetup - 류충현**: [대통령 연설문 - 데이터 긁어오기](nlp-president-crawl.html), [대통령 연설문 - DTM 만들기](nlp-president-dtm.html)
 1. **[R 파이썬을 만나다.](text-r-meet-python.html)**

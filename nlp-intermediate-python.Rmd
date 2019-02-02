@@ -38,3 +38,14 @@ Collocation(연어): 인접하게 빈번하게 등장하는 단어 ("Data" + "Sc
 <img src="fig/nlp-gensim.png" alt="자연어 처리 - gensim" width="100%" />
 
 
+# 자연어 처리 작업흐름도 {#nlp-analysis-workflow}
+
+1. tokenisation
+1. parts of speech tagging
+1. lemmatisation
+1. morphological feature tagging
+1. syntactic dependency parsing
+1. entity recognition
+1. extracting word & sentence meaning
+
+
