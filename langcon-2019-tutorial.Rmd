@@ -29,8 +29,9 @@ knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
 
 # 튜토리얼 소개 {#tutorial-intro}
 
-[자연어 처리의 민낯](https://songys.github.io/2019LangCon/)에서 "유튜브 댓글 텍스트 분석"을 주제로 튜토리얼을 시작합니다.
+[LangCon2019 : 자연어처리하기 좋은 날입니다!](https://songys.github.io/2019LangCon/)에서 "유튜브 댓글 텍스트 분석"을 주제로 튜토리얼을 시작합니다.
 
+- [R 언어 NLP 생태계](http://www.bnosac.be/index.php/blog): [NLP 생태계 이미지](http://www.bnosac.be/images/bnosac/blog/NLP-R-ecosystem.png)
 - R 개발자가 알아야 되는 보안
 - 유튜브 API
 - 유튜브 댓글: [자료구조](https://statkclee.github.io/parallel-r/r-parallel-fp-ds.html)
@@ -51,6 +52,17 @@ knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
     - [알릴레요 vs. 홍카콜라 - 댓글 분류](youtube-channel-comment-classification.html)
 
 <img src="fig/langcon-tutorial.png" alt="튜토리얼 개요" width="100%" />
+
+# 자연어처리 범위 {#tutorial-scope}
+
+## NLP 생태계 {#tutorial-scope-ecosystem}
+
+<img src="fig/NLP-R-ecosystem.png" alt="자연어 처리 생태계" width="100%" />
+
+## 텍스트 마이닝 {#tutorial-scope-text-mining}
+
+<img src="fig/ml-text-technology-roadmap.png" alt="텍스트 마이닝 언어기술 " width="100%" />
+
 
 # 클라우드 시대 보안키 [^cloud-key] {#cloud-key}
 
