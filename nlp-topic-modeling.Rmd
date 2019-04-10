@@ -1,0 +1,43 @@
+---
+layout: page
+title: 토픽 모형 (Topic Model)
+output:
+  html_document: 
+    toc: yes
+    toc_float: true
+    highlight: tango
+    number_section: true
+    code_folding: show
+mainfont: NanumGothic
+editor_options: 
+  chunk_output_type: console
+---
+
+``` {r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
+                    comment="", digits = 3, tidy = FALSE, prompt = TRUE, fig.align = 'center')
+
+```
+
+
+# 들어가며 [^topic-intro] {#nlp-topic-model}
+
+[^topic-intro]: [Chris Bail (Duke University), "Topic Modeling"](https://cbail.github.io/SICSS_Topic_Modeling.html)
+
+**토픽(topic)**은 문서 모임을 추상화한 것으로 토픽을 듣게 되면 문서에서 추출될 단어를 어림 짐작할 수 있게 된다.
+예를 들어, 전쟁이라고 하면 총, 군인, 탱크, 비행기 등이 관련된 단어로 연관된다.
+
+**토픽 모형(topci modeling)**은 문서로부터 모형을 적합시켜 토픽을 찾아내는 과정으로 정의할 수 있다.
+토픽모형을 활용함으로써 문서를 분류하는데 종종 활용된다. 특히, LDA(Latent Dirichlet Allocation) 모형이 가장 많이 활용되고 있다.
+
+LDA는 DTM을 입력값을 받아 문서별로 토픽에 대한 연관성을 나타내는 행렬과 토픽에 단어가 속할 확률 행렬을 출력값으로 반환한다.
+
+```{r nlp-topic}
+
+```
+
+
+
+
+
+
