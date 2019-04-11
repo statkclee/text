@@ -115,7 +115,61 @@ cowplot::plot_grid(doc_topic_g, topic_word_g)
 ```
 
 
+# 토픽갯수 - `AssociatedPress` {#nlp-topic-model-choose-topic}
+
+토픽 갯수 `k`를 선택하는 방식은 크게 두가지로 나눠진다.
+
+1. 수작업: 적당한 `k`를 잡아 토픽 모형을 구축한 후에 토픽에 포함된 단어를 보고 품질검사를 해서 몇번 반복하는 과정을 거쳐서 최적 `k` 선정.
+1. 자동화: 로그-우도비(Log Likelihood)와 Perplexity 값을 가능한 `k`값에 적합을 시키고 가장 최적값에 해당되는 토픽갯수를 선정.
+
+## 임의 토픽갯수 지정 {#nlp-topic-model-choose-topic-k}
+
+`topicmodels` 팩키지에 포함된 `AssociatedPress` 데이터를 사용해서 토픽을 3개로 지정한 후에 토픽 모형을 구축하고 
+로그-우도비(Log Likelihood)와 Perplexity 값을 계산해 본다.
+
+```{r nlp-topic-model-choose-k}
+library(topicmodels)
+data("AssociatedPress")
+AssociatedPress
+
+ap_lda <- LDA(AssociatedPress, k = 3, control = list(seed = 1357))
+
+logLik(ap_lda)
+perplexity(object = ap_lda, newdata =  AssociatedPress)
+```
+
+## 최적 토픽갯수 {#nlp-topic-model-choose-topic-k-best}
 
 
+```{r nlp-topic-model-choose-k-best, eval=FALSE}
+loglik_v     <- vector("numeric", 10) 
+perplexity_v <- vector("numeric", 10) 
+
+for (i in 2:10) {
+  cat("... ", i, "\n")
+  tmp_mod  <- LDA(AssociatedPress, k=i, method="Gibbs", control=list(alpha=0.5, iter=1000, seed=12345, thin=3))
+  loglik_v[i] <- logLik(tmp_mod)
+  perplexity_v[i] <- perplexity(tmp_mod, newdata =  AssociatedPress)
+}
+
+topic_k_df <- tibble(
+  topic_k = 1:10,
+  loglik = loglik_v,
+  perplexity = perplexity_v)
+
+topic_k_df %>% write_rds("data/topic_k_df.rds")
+```
+
+```{r nlp-topic-model-choose-k-best-viz}
+topic_k_df <- read_rds("data/topic_k_df.rds")
+
+topic_k_df %>%
+  filter(topic_k != 1) %>% 
+  gather(metric, value, -topic_k) %>% 
+  ggplot(aes(x=topic_k, y=value)) +
+    geom_line() +
+    geom_point() +
+    facet_wrap(~metric, scales = "free")
+```
 
 
