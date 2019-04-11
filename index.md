@@ -45,6 +45,7 @@ title: 자연어 처리 - 텍스트
     1. [재난 트윗 분류기 - `tidytext`와 `caret`](text-twitter-tidytext-caret.html)
 1. **한국어**
     1. **한국어 R Meetup - 류충현**: [대통령 연설문 - 데이터 긁어오기](nlp-president-crawl.html), [대통령 연설문 - DTM 만들기](nlp-president-dtm.html)
+    1. [`RmecabKo` 설치 - 맥(Mac)](nlp-rmecabko-install.html)
 1. **[R 파이썬을 만나다.](text-r-meet-python.html)**
     1. [자연어 처리 입문](nlp-intro-python.html) - 텍스트 &rarr; 단어주머니(Bag of Words) 
     1. [자연어 처리 중급](nlp-intermediate-python.html) 

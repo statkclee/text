@@ -1,0 +1,104 @@
+---
+layout: page
+title: "`RmecabKo` 설치 - 맥(Mac)"
+output:
+  html_document: 
+    toc: yes
+    toc_float: true
+    highlight: tango
+    number_section: true
+    code_folding: show
+mainfont: NanumGothic
+editor_options: 
+  chunk_output_type: console
+---
+
+``` {r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
+                    comment="", digits = 3, tidy = FALSE, prompt = FALSE, fig.align = 'center')
+
+```
+
+
+# 형태소 분석 엔진 - MeCab [^mecab-install] {#nlp-RmecabKo-install}
+
+[^mecab-install]: [Buttercoco (2019.02.06 09:44), "MeCab 및 mecab-python 설치하기(MacOS)"](https://buttercoco.tistory.com/26)
+
+[`RmecabKo`: R wrapper for eunjeon project (mecab-ko)](https://github.com/junhewk/RmecabKo)를 설치하기 위해서는 
+`RmecabKo` 소개에 나와있듯이 먼저 은전한닢 프로젝트에서 "MeCab"과 함께 한국어 사전 "mecab-ko-dic"을 설치해야 된다.
+
+[https://bitbucket.org/eunjeon/mecab-ko/downloads/](https://bitbucket.org/eunjeon/mecab-ko/downloads/) 웹사이트를 방문하여
+MeCab, MeCab 한국어 사전을 차례로 다운로드 받아 절차대로 설치한다.
+
+## MeCab 설치 {#nlp-RmecabKo-install-mecab}
+
+[bitbucket MeCab](https://bitbucket.org/eunjeon/mecab-ko/downloads/) 웹사이트에서 MeCab 압축파일을 다운로드 받아 
+압축을 풀고 설치를 진행한다.
+
+``` {r install-mecab, eval=FALSE}
+$ wget https://bitbucket.org/eunjeon/mecab-ko/downloads/mecab-0.996-ko-0.9.2.tar.gz
+$ tar xzvf mecab-0.996-ko-0.9.2.tar.gz
+$ cd mecab-0.996-ko-0.9.2
+$ ./configure
+$ make
+$ sudo make install
+```
+
+## MeCab 한국어 사전 설치 {#nlp-RmecabKo-install-mecab-dic}
+
+[bitbucket MeCab 한국어 사전](https://bitbucket.org/eunjeon/mecab-ko-dic/downloads/) 웹사이트에서 MeCab 한국어 사전 
+압축파일을 다운로드 받아 압축을 풀고 설치를 진행한다.
+
+``` {r install-mecab-dic, eval=FALSE}
+$ wget https://bitbucket.org/eunjeon/mecab-ko-dic/downloads/mecab-ko-dic-2.1.1-20180720.tar.gz
+$ tar xzvf mecab-ko-dic-2.1.1-20180720.tar.gz
+$ cd mecab-0.996-ko-0.9.2
+$ ./configure
+$ make
+$ sudo make install
+```
+
+# `RmecabKo` 설치 {#nlp-RmecabKo-install-on-R}
+
+`RmecabKo` 설치 저자는 `RcppMeCab`을 먼저 설치할 것을 추천하고 있다.
+따라서, 먼저 `RcppMeCab`을 먼저 GitHub에서 설치하고, `RmecabKo`를 그다음으로 순차적으로 설치한다.
+
+``` {r install-mecab-on-R, eval=FALSE}
+devtools::install_github("junhewk/RcppMeCab")
+devtools::install_github("junhewk/RmecabKo")
+```
+
+# `RmecabKo` 헬로월드 {#nlp-RmecabKo-install-helloworld}
+
+5개 텍스트 문장을 대상으로 데이터프레임을 만든 후에 이를 
+`tidyverse` 흐름에 맞춰 명사만 추출해 보자.
+
+``` {r install-mecab-hello-world, eval=TRUE}
+library(tidyverse)
+library(RmecabKo)
+
+sample_text <- c("부실 대출로 인해서 은행은 벌금을 지불하는데 동의했다",
+                 "은행에 대출을 늦게 갚은 경우, 은행에서 지연에 대해 이자를 물릴 것이다.", 
+                 "시내에 새로운 식당이 생겼습니다.",
+                 "테헤란로에 맛집 식당이 있습니다.",
+                 "새로 개장하려고 하는 식당 대출을 어떻게 상환할 계획입니까?")
+
+sample_df <- tibble(
+  document = paste0("문서", 1:5),
+  text = sample_text
+)
+
+DT::datatable(sample_df)
+
+sample_bow <- sample_df %>% 
+  mutate(nouns = map(text, nouns)) %>% 
+  unnest(nouns) %>% 
+  group_by(document) %>% 
+  count(nouns, sort = TRUE)
+
+sample_bow %>% 
+  spread(document, n, fill=0) %>% 
+  DT::datatable()
+
+```
+

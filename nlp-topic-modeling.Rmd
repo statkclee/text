@@ -15,7 +15,7 @@ editor_options:
 
 ``` {r, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
-                    comment="", digits = 3, tidy = FALSE, prompt = TRUE, fig.align = 'center')
+                    comment="", digits = 3, tidy = FALSE, prompt = FALSE, fig.align = 'center')
 
 ```
 
@@ -30,9 +30,51 @@ knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
 **토픽 모형(topci modeling)**은 문서로부터 모형을 적합시켜 토픽을 찾아내는 과정으로 정의할 수 있다.
 토픽모형을 활용함으로써 문서를 분류하는데 종종 활용된다. 특히, LDA(Latent Dirichlet Allocation) 모형이 가장 많이 활용되고 있다.
 
-LDA는 DTM을 입력값을 받아 문서별로 토픽에 대한 연관성을 나타내는 행렬과 토픽에 단어가 속할 확률 행렬을 출력값으로 반환한다.
+텍스트에서 토픽모형을 개발하는 순서는 대략 다음과 같다.
+
+1. 텍스트를 DTM을 변환시킨다.
+    - 명사를 추출할 경우와, 동사를 추출할 경우로 나눠서 살펴볼 수도 있다.
+1. LDA는 DTM을 입력값을 받아 문서별로 토픽에 대한 연관성을 나타내는 행렬과 토픽에 단어가 속할 확률 행렬을 출력값으로 반환한다.
+    - 제어 매개변수(control parameter)를 적절히 설정한다.
+1. 출력된 행렬은 세부적으로 정보를 확인할 때 필요하고 우선, 시각매체를 사용하여 시각화한다.
+
 
 ```{r nlp-topic}
+library(tidyverse)
+library(tidytext)
+library(RmecabKo)
+library(topicmodels)
+
+sample_text <- c("부실 대출로 인해서 은행은 벌금을 지불하는데 동의했다",
+                 "은행에 대출을 늦게 갚은 경우, 은행에서 지연에 대해 이자를 물릴 것이다.", 
+                 "시내에 새로운 식당이 생겼습니다.",
+                 "테헤란로에 맛집 식당이 있습니다.",
+                 "새로 개장하려고 하는 식당 대출을 어떻게 상환할 계획입니까?")
+
+sample_df <- tibble(
+  document = paste0("문서", 1:5),
+  text = sample_text
+)
+
+sample_bow <- sample_df %>% 
+  mutate(nouns = map(text, nouns)) %>% 
+  unnest(nouns) %>% 
+  group_by(document) %>% 
+  count(nouns, sort = TRUE)
+
+sample_dtm <- sample_bow %>% 
+  cast_dtm(document = document, term = nouns, value = n) %>% 
+  as.matrix
+
+sample_lda <- LDA(sample_dtm, k = 2,  method="Gibbs", control=list(alpha=1, delta=0.1, seed=10005))
+
+tidy(sample_lda, matrix="gamma") %>% 
+  arrange(document) %>% 
+  spread(topic, gamma)
+
+tidy(sample_lda, matrix="gamma") %>% 
+  ggplot(aes(x=document, y=gamma)) + 
+    geom_col(aes(fill=as.factor(topic)), position=position_dodge())
 
 ```
 
