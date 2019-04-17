@@ -1,0 +1,162 @@
+---
+layout: page
+title: "트위터 - `tidyverse` + `tidytext`"
+output:
+  html_document: 
+    toc: yes
+    toc_float: true
+    highlight: tango
+    number_section: true
+    code_folding: show
+    self_contained: true
+mainfont: NanumGothic
+editor_options: 
+  chunk_output_type: console
+---
+
+``` {r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
+                    comment="", digits = 3, tidy = FALSE, prompt = FALSE, fig.align = 'center')
+
+```
+
+
+# 트위터 데이터셋 {#twitter-tidytext}
+
+캐글 [Sentiment140 dataset with 1.6 million tweets - 
+Sentiment analysis with tweets](https://www.kaggle.com/kazanova/sentiment140) 데이터셋은 `Sentiment140` 으로 불리며,
+트위터 API에서 추출된 1,600,000건 트윗이 담겨져 있다. 그런데, 각 트윗은 0=부정(negative), 4=긍정(positive)으로 
+라벨이 붙어있어 다양한 텍스트 분석을 수행하는데 적합한 데이터셋 중의 하나로 평가된다.
+
+```{r twitter-import-dataset}
+library(tidyverse)
+library(tidytext)
+
+tw_dat <- read_csv("data/sentiment140/training.1600000.processed.noemoticon.csv", 
+                  col_names = c("target", "ids", "date", "flag", "user", "text"),
+                  cols(target = col_integer(),
+                       ids    = col_character(),
+                       date   = col_character(),
+                       flag   = col_character(),
+                       user   = col_character(),
+                       text   = col_character()))
+
+tw_dat %>% 
+    count(target)
+```
+
+# 데이터 전처리 {#twitter-tidytext-preprocessing}
+
+## 데이터 일부 추출 {#twitter-tidytext-preprocessing-sampling}
+
+데이터가 너무 커서 긍부정(`target`)을 각 1%씩 즉, 8,000개를 뽑아서 텍스트 자연어 처리를 위한 준비를 한다. 
+
+```{r twitter-import-dataset-preprocessing}
+set.seed(777)
+
+tw_df <- tw_dat %>% 
+  group_by(target) %>% 
+  sample_n(8000) %>% 
+  ungroup() %>% 
+  mutate(target = ifelse(target == 0, 0, 1)) %>% 
+  mutate(target = factor(target, levels = c(0,1), labels=c("부정", "긍정")))
+```
+
+## 해쉬태그, @, URL 제거 {#twitter-tidytext-preprocessing-url}
+
+인터넷 정규표현식을 참조하여 해쉬태그, `@`, URL을 제거한다.
+
+```{r twitter-tidytext-remove}
+tw_regex_df <- tw_df %>% 
+  mutate(text = str_remove_all(text, "\\B(\\#[a-zA-Z]+\\b)(?!;)")) %>%  # 해쉬태그 제거
+  mutate(text = str_remove_all(text, "\\B(\\@[a-zA-Z]+\\b)(?!;)")) %>%  # @제거
+  mutate(text = str_remove_all(text, "((https?):((//)|(\\\\))+([\\w\\d:#@%/;$()~_?\\+-=\\\\.&](#!)?)*)")) # URL 제거 
+tw_regex_df
+```
+
+## `tidytext` 변환 {#twitter-tidytext-preprocessing-tidy}
+
+`unnest_tokens()` 함수를 사용하게 되면 `tidytext` 팩키지에서 텍스트 문장을 깔끔한 자연어 형태로 변환을 시킨다.
+그 전에 가장 많이 사용되는 불용어를 별도 사전으로 정의하고 이를 활용하여 트위터 트윗 텍스트에서 불용어를 제거시킨다.
+
+```{r twitter-tidytext-remove-tidy}
+custom_stopwords <- tribble(
+  ~"word", ~"lexicon",
+  "2", "twitter",
+  "im", "twitter"
+)
+
+custom_stop_words <- stop_words %>% 
+  bind_rows(custom_stopwords)
+
+custom_stop_words %>% 
+  tail
+
+tw_tidy_df <- tw_regex_df %>% 
+  unnest_tokens(word, text) %>% 
+  anti_join(custom_stop_words)
+
+tw_tidy_df %>% 
+  count(word, sort=TRUE)
+```
+
+# 시각화 {#twitter-tidytext-viz}
+
+깔끔한 텍스트 데이터가 준비되면 그 다음 단계로 `ggplot`을 활용하여 단어주머니(Bag of Words)를 만들어서 막대그래프와 단어구름(wordcloud)을 제작하여 시각화한다.
+
+```{r twitter-tidytext-viz}
+tw_tidy_df %>% 
+  count(target, word, sort=TRUE) %>% 
+  group_by(target) %>% 
+  top_n(15, n) %>% 
+  ungroup() %>% 
+  mutate(word = fct_reorder(word, n)) %>% 
+  ggplot(aes(x=word, y=n, fill=target)) +
+    geom_col(show.legend = FALSE) +
+    coord_flip() +
+    facet_wrap( ~target, scales="free") +
+    labs(x="", y="", title="트위터 긍부정", subtitle="Sentiment140 데이터셋")
+```
+
+전통적인 `wordcloud` 대신에 [stackoverflow, "Subplot/facets with wordclouds"](https://stackoverflow.com/questions/47080052/subplot-facets-with-wordclouds)을 참조하여 단어구름을 `ggplot`으로 구현한다.
+
+```{r twitter-tidytext-viz-wordcloud}
+library(ggrepel)
+
+tw_tidy_df %>% 
+  count(target, word, sort=TRUE) %>% 
+  group_by(target) %>% 
+  top_n(50, n) %>% 
+  ungroup() %>% 
+  mutate(word = fct_reorder(word, n)) %>% 
+  ggplot(., aes(x = 1, y = 1, size = n, label = word)) +
+    geom_text_repel(segment.size = 0, segment.alpha = 0) +
+    scale_size(range = c(2, 15), guide = FALSE) +
+    theme_void() +
+    theme(panel.border = element_rect(colour = "black", fill=NA, size=1)) +
+    facet_wrap(~target) +
+      labs(x="", y="", title="트위터 긍부정 단어구름", subtitle="Sentiment140 데이터셋")
+```
+
+
+# 감성분석 {#twitter-tidytext-sentiment}
+
+
+```{r twitter-tidytext-sentiment}
+
+```
+
+
+# 토픽모형 {#twitter-tidytext-topic-model}
+
+
+```{r twitter-tidytext-topic-model}
+```
+
+
+# 긍부정 예측모형 {#twitter-tidytext-predictive-model}
+
+
+```{r twitter-tidytext-predictive-model}
+
+```
