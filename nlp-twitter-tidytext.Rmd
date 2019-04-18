@@ -141,22 +141,188 @@ tw_tidy_df %>%
 
 # 감성분석 {#twitter-tidytext-sentiment}
 
+감성분석은 `get_sentiments()` 함수를 사용해서 감성사전을 가져오는 것부터 시작된다. 과거 3종 감성사전이 있었는데... 영어의 경우... 기존 "afinn", "bing", "nrc", 사전에 "loughran" 신규 사전이 추가되었다. 
+
+트위터 트윗에서 라벨링한 것과 감성사전에서 정의한 감성 긍부정을 교차표를 통해 살펴보자.
+다소 차이가 나지만, 부정은 `negative`로 긍정은 `positive`로 어느정도 두배이상 높은 정확도를 보이고 있다.
 
 ```{r twitter-tidytext-sentiment}
+get_sentiments(lexicon = "bing") %>% 
+  count(sentiment)
 
+get_sentiments(lexicon = "bing") %>% 
+  inner_join(tw_tidy_df) %>% 
+  count(target, sentiment) %>% 
+  spread(target, n)
+```
+
+## 시각화 {#twitter-tidytext-sentiment-viz}
+
+"bing" 감성사전을 트위터 데이터프레임과 결합시켜 각 범주별로 15개 단어를 추출하여 막대그래프로 시각화한다.
+
+```{r twitter-tidytext-sentiment-viz}
+get_sentiments(lexicon = "bing") %>% 
+  inner_join(tw_tidy_df) %>% 
+  count(target, word, sentiment) %>% 
+  group_by(target, sentiment) %>%
+  top_n(15) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = fct_reorder(word, n), y=n, fill=target)) +
+    geom_col(position="dodge") +
+    facet_wrap(~sentiment, scales="free") +
+    coord_flip()
 ```
 
 
 # 토픽모형 {#twitter-tidytext-topic-model}
 
+긍부정 트위터 트윗을 대상으로 토픽을 살펴보고 어떤 트윗에서 긍부정이 높은지 살펴보는 것도 나름 의미가 크다.
+이를 위해서 `topicmodels` 팩키지 `LDA()` 함수를 사용한다.
+그런데 `LDA` 함수는 입력 자료구조로 DTM(Document-Term_matrix)을 기본으로 한다. 따라서 깔끔한 tidytext를 `cast_dtm()` 함수로 변경을 해야만 한다.
 
-```{r twitter-tidytext-topic-model}
+DTM 내부 구조를 살펴보기 위해서는 `as.matrix()` 함수로 행렬자료형으로 변환을 한 후에 텍스트 일부를 추출해서 살펴본다.
+
+```{r twitter-tidytext-topic-model-dtm}
+tw_dtm <- tw_tidy_df %>% 
+  count(word, ids) %>% 
+  cast_dtm(document = ids, term = word, value = n)
+
+tw_dtm %>% 
+  as.matrix() %>% 
+  .[7:10, 1000:1005]
+```
+
+토픽모형을 `LDA()` 함수에 토픽갯수(`k = 3`)를 지정한 후에 실행한 후에 `tidy()` 함수로 후속 작업을 원할히 할 수 있는 자료구조로 변환을 시킨 후에 시각화한다.
+
+```{r twitter-tidytext-topic-model-dtm-lda}
+library(topicmodels)
+
+tw_lda <- LDA(tw_dtm, 
+              k = 3,
+              method = "Gibbs",
+              control = list(seed = 777))
+
+tw_lda %>% 
+  tidy(matrix =  "beta") %>% 
+  mutate(topic = as.factor(topic)) %>% 
+  group_by(topic) %>% 
+  top_n(15) %>% 
+  ungroup() %>% 
+  ggplot(aes(x=fct_reorder(term, beta), y=beta, fill=topic)) +
+    geom_col(show.legend = FALSE) +
+    facet_wrap( ~ topic, scales = "free") +
+    coord_flip() +
+    labs(x="", y="")
 ```
 
 
-# 긍부정 예측모형 {#twitter-tidytext-predictive-model}
+# 긍부정 예측모형 [^tidytext-classification] {#twitter-tidytext-predictive-model}
 
+[^tidytext-classification]: [JULIA SILGE (Dec 24, 2018), "TEXT CLASSIFICATION WITH TIDY DATA PRINCIPLES"](https://juliasilge.com/blog/tidy-text-classification/)
 
 ```{r twitter-tidytext-predictive-model}
+# 훈련/시험 데이터셋 구분
+library(rsample)
 
+tw_tidy_df <- tw_tidy_df %>% 
+  filter(str_detect(word, "\\b[a-zA-Z0-0].+\\b")) %>% 
+  arrange(word)
+
+set.seed(77777)
+tw_split <- tw_df %>%
+  select(ids) %>%
+  initial_split(0.6)
+
+train_data <- training(tw_split)
+test_data <- testing(tw_split)
+
+# 텍스트 feature 전처리 작업
+sparse_words <- tw_tidy_df %>%
+  count(ids, word) %>%
+  inner_join(train_data) %>%
+  cast_sparse(ids, word, n)
+
+class(sparse_words)
+dim(sparse_words)
+
+word_rownames <- rownames(sparse_words)
+
+tw_joined <- data_frame(ids = word_rownames) %>%
+  left_join(tw_df) %>%
+    select(ids, target)
+
+# 예측모형 적합
+library(glmnet)
+library(doMC)
+registerDoMC(cores = 8)
+
+is_positive <- tw_joined$target == "긍정"
+
+tw_glm <- cv.glmnet(sparse_words, is_positive,
+  family = "binomial",
+  parallel = TRUE, keep = TRUE)
+
+plot(tw_glm)
+```
+
+## 모형해석 {#twitter-tidytext-predictive-model-interpret}
+
+모형 해석을 위해서 `broom` 팩키지를 사용한다.
+
+```{r twitter-tidytext-predictive-model-interpret}
+library(broom)
+
+tw_coefs <- tw_glm$glmnet.fit %>%
+  tidy() %>%
+  filter(lambda == tw_glm$lambda.1se)
+
+tw_coefs %>%
+  group_by(estimate > 0) %>%
+  top_n(10, abs(estimate)) %>%
+  ungroup() %>%
+  ggplot(aes(fct_reorder(term, estimate), estimate, fill = estimate > 0)) +
+  geom_col(alpha = 0.8, show.legend = FALSE) +
+  coord_flip() +
+  labs(
+    x = NULL,
+    title = "긍정 확률을 가장 높이는 회귀계수",
+    subtitle = "단어 whatava가 포함되면 긍정, sad가 포함되면 부정일 가능성이 높다."
+  )
+```
+
+
+## 트윗 긍정확률 - 시험데이터 {#twitter-tidytext-predictive-model-test}
+
+트윗 긍정확률을 앞서 개발된 모형을 바탕으로 추정해보자.
+그리고 트윗(`text`)을 붙여 트윗 감성예측이 제대로 되었는지도 확인해본다.
+
+```{r twitter-tidytext-predictive-model-test}
+tw_intercept <- tw_coefs %>%
+  filter(term == "(Intercept)") %>%
+  pull(estimate)
+
+classifications <- tw_tidy_df %>%
+  inner_join(test_data) %>%
+  inner_join(tw_coefs, by = c("word" = "term")) %>%
+  group_by(ids) %>%
+  summarize(score = sum(estimate)) %>%
+  mutate(probability = plogis(tw_intercept + score)) %>% 
+  left_join(tw_df)
+
+classifications %>% 
+  select(ids, score, probability, target, text) %>% 
+  sample_n(10)
+```
+
+
+## 트윗 긍부정 예측모형 성능 {#twitter-tidytext-predictive-model-performance}
+
+`yardstick` 팩키지를 사용해서 트윗 긍부정 예측모형 성능을 `roc_auc()`를 통해 확인해본다.
+
+```{r twitter-tidytext-predictive-model-performance}
+library(yardstick)
+
+classifications %>% 
+  select(ids, score, probability, text, target) %>%
+  roc_auc(target, probability)
 ```
