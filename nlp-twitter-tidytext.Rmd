@@ -20,6 +20,24 @@ knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
 
 ```
 
+# 텍스트 작업흐름 {#twitter-tidytext-workflow}
+
+`tidytext` 일반적인 작업 흐름은 텍스트를 단어주머니(Bag of Word)로 넣고 
+이를 DTM(Document-Term_matrix)로 변환시킨 후에 시각화를 위해서 단어구름 혹은 막대그래프,
+토픽모형같은 비지도 학습과 예측모형을 위해서 지도학습을 함께 작업한다.
+
+<img src="fig/nlp-workflow.png" alt="정상 작업 흐름" width="100%" />
+
+전통적인 작업흐름에 더해서 불용어(Stop Words)와 감성사전(Sentiment Dictionary)을 추가하여
+텍스트에서 의미없는 단어를 제거하고 감성을 더 풍부하게 분석할 수 있다.
+
+<img src="fig/nlp-dictionary-workflow.png" alt="사전추가 작업흐름" width="100%" />
+
+자연어 처리 작업흐름에 앞뒤에 광학문자인식(OCR)과 예측모형을 외부에 뽑아 내어 다른 
+앱이나 사용자가 사용할 수 있도록 확장하는 것도 가능하다.
+
+<img src="fig/nlp-ai-workflow.png" alt="인공지능 작업흐름" width="100%" />
+
 
 # 트위터 데이터셋 {#twitter-tidytext}
 
