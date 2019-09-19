@@ -38,6 +38,7 @@ title: 자연어 처리 - 텍스트
     1. [셜록홈즈 - 단어구름에서 토픽모형](silge-topic-modeling.html) 
     1. [트위터 - `tidyverse` + `tidytext`](nlp-twitter-tidytext.html) 
 1. **기계학습과 딥러닝(Deep Learning)**
+    1. [객체 변환: `tm` &harr; `tidytext`](nlp-tm-tidytext.html)
     1. [텍스트 분류(Text Classification) - 나이브 베이즈(naive bayes)](nlp-text-classification.html)
     1. [영화 평점 - 무비렌즈(MovieLens)](nlp-text-movielens.html)
     1. [SMS 스팸분류 - Random Forest](nlp-spam-machine-learning.html)
