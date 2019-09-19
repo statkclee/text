@@ -1,29 +1,38 @@
 ---
 layout: page
-title: xwMOOC 자연어 처리 - 텍스트
-subtitle: 텍스트 데이터 수집 및 단어문서행렬(TDM) -- 트위터
+title: "xwMOOC 자연어 처리 - 텍스트"
+subtitle: "텍스트 데이터 수집 -- 트위터"
+author:
+    name: xwMOOC
+    url: https://www.facebook.com/groups/tidyverse/
+    affiliation: Tidyverse Korea
+date: "`r Sys.Date()`"
 output:
   html_document: 
     toc: yes
-  pdf_document:
-    latex_engine: xelatex
-mainfont: NanumGothic
+    toc_float: true
+    highlight: tango
+    code_folding: show
+    number_section: true
+    self_contained: true
+editor_options: 
+  chunk_output_type: console
 ---
- 
-> ## 학습목표 {.objectives}
->
+
+
 > * 텍스트 문자 데이터 분석을 위해 텍스트 데이터를 가져온다.
 > * 트위터 서비스를 통해 텍스트 문자 데이터를 R로 불러온다. 
 > * 트위터에서 트윗을 불러와서 단어문서행렬로 변환한다.
 > * 전처리 과정을 거쳐 단어 빈도수를 단어문서행렬을 통해 산출한다.
 > * 막대그래프로 빈도수 높은 단어를 시각화한다.
 
-
 ``` {r, include=FALSE}
-source("tools/chunk-options.R")
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE,
+                    comment="", digits = 3, tidy = FALSE, prompt = FALSE, fig.align = 'center')
 ```
 
-## 1. 트위터 서비스 {#nlp-twitter}
+
+# 트위터 서비스 {#nlp-twitter}
 
 "트윗(tweet)"이란 말은 작은 새가 지저귀는 소리를 나타내는 영어 낱말로, 
 [트위터(영어: Twitter)](https://www.twitter.com/)는 **소셜 네트워크 서비스(SNS)**이자 **마이크로블로그** 서비스로 볼 수 있다.
@@ -31,7 +40,7 @@ source("tools/chunk-options.R")
 단문 메시지 서비스(SMS), 인스턴트 메신저, 전자 우편(e-mail) 등을 통해 "트윗(tweet)"를 전송할 수 있고, 글 한 편에 해당하는 단위는 트윗으로 140자가 한도가 된다. 
 한글이든 영문이든, 공백과 기호를 포함해 한 번에 140 까지 글자를 올릴 수 있다.
 
-### 1.1. 트위터 계정과 핸드폰 번호 등록 {#nlp-twitter-setup}
+## 트위터 계정과 핸드폰 번호 등록 {#nlp-twitter-setup}
 
 텍스트 문자 데이터를 R로 받아오기 위해서는 먼저 트위터 계정을 생성하고 핸드폰 번호를 등록하고 인증과정을 거쳐야 된다.
 
@@ -39,7 +48,7 @@ source("tools/chunk-options.R")
 
 인증된 핸드폰 번호가 있어야 [트위터 개발자 페이지](https://dev.twitter.com/)에서 앱개발에 대한 키값을 받을 수 있다.
 
-### 1.2. 트위터 개발자 페이지 {#nlp-twitter-developer}
+## 트위터 개발자 페이지 {#nlp-twitter-developer}
 
 트위터 계정을 생성하고, 핸드폰 인증을 마친 뒤에 [트위터 개발자 페이지](https://dev.twitter.com/)에서 **TOOLS** 메뉴를 찾아 
 [Manage Your Apps](https://apps.twitter.com/)로 들어간다. 이유는 트위터 데이터를 통해 부가적인 가치를 창출하는 응용프로그램을 개발해야 되기 때문이다.
@@ -50,7 +59,7 @@ source("tools/chunk-options.R")
 1. **Create your Twitter application** 을 클릭하면 트위터 응용프로그램이 생성된다.
     * 핸드폰 번호를 등록하지 않는 경우 다음으로 넘어가지 않아서 상기 "트위터 계정과 핸드폰 번호 등록"을 통해 필히 핸드폰을 등록한다.
 
-### 1.3. 키값과 접속 토큰 {#nlp-twitter-developer-token}
+## 키값과 접속 토큰 {#nlp-twitter-developer-token}
 
 응용프로그램이 생성되었으면 다음으로 남은 단계는 **고객 키(Consumer Key)** 와 **비밀번호(Consumer Secret)** 와 더불어 **접속 토큰(Access Token)** 과
 **접속 토큰 비밀번호(Access Secret)** 를 확인한다. 만약 의심스러운 경우 지체없이 `Regenerate` 버튼을 눌러 재생성한다.
@@ -60,7 +69,7 @@ source("tools/chunk-options.R")
 * access_token   
 * access_secret  
 
-## 2. `twitteR` 트위터 데이터 긁어오기 {#nlp-twitter-api}
+# `twitteR` 트위터 데이터 긁어오기 {#nlp-twitter-api}
 
 오랜기간동안 트위터가 서비스 되었고, R을 활용한 데이터 분석이 인기를 끌어 쉽게 텍스트 문자정보를 긁어와서 분석을 수월하게 진행할 수 있다.
 `twitteR`과 `ROAuth` 팩키지를 설치하고 트위터 개발자 페이지, 앱 개발 페이지에서 수집한 고객키값과 접속토큰값을 `twitterOAuth.R` 파일에
@@ -109,9 +118,9 @@ head(hq_tweets_df$text)
 [6] "안철수, 1박2일 호남행…박지원은 손학규와 회동&lt;=손학규(@HQ_Sohn)님,모바일 부정의혹으로 대선후보 앗아간 문재인에게 미련갖지 마시길,공정경선하고,여의치 않으면 길을 돌아 가는 것도 생각해 보셨으면^^ https://t.co/CuIJ0NDnDt"    
 ```
 
-## 3. 단어문서행렬 {#nlp-twitter-tdm}
+# 단어문서행렬 {#nlp-twitter-tdm}
 
-### 3.1. 트위터 인증 {#nlp-twitter-tdm-auth}
+## 트위터 인증 {#nlp-twitter-tdm-auth}
 
 `text_processing_fun.R` 함수내에 `twitter_auth()` 인증함수로 저장하여 인증과정을 캡슐화하여 숨겨놓는다.
 
@@ -131,7 +140,7 @@ twitter_auth()
 [1] "Using direct authentication"
 ```
 
-### 3.2. 트위터 데이터 불러오기 {#nlp-twitter-tdm-import}
+## 트위터 데이터 불러오기 {#nlp-twitter-tdm-import}
 
 `twitter_auth()`를 통해 인증을 거친 뒤에 `searchTwitter` 함수를 통해 `#rstats` 해쉬태그를 갖는 트윗을 
 불러온다. 원활한 데이터 작업을 위해 `twListToDF` 함수로 트윗 리스트를 데이터프레임으로 변환한다.
@@ -145,7 +154,7 @@ tw <- searchTwitter('#rstats', n = 100, lang="en", since = '2016-04-01')
 tw_rd_df <- twListToDF(tw)
 ```
 
-### 3.3. 트위터 데이터 전처리 {#nlp-twitter-tdm-preprocessing}
+## 트위터 데이터 전처리 {#nlp-twitter-tdm-preprocessing}
 
 `twitter_clean_text` 함수를 통해 텍스트 트윗 메시지를 전처리한다. 전처리 과정에는 
 소문자 변환, 구두점 제거, 불용어 처리 등등이 포함된다.
@@ -157,7 +166,7 @@ tw_rd_df <- twListToDF(tw)
 tw_df <- twitter_clean_text(tw_rd_df$text)
 ```
 
-### 3.4. 단어문서행렬 {#nlp-twitter-tdm-matrix}
+## 단어문서행렬 {#nlp-twitter-tdm-matrix}
 
 단어분석행렬을 통한 방법이 일반적으로 많이 사용된다. 이를 위해 입력값이 데이터프레임인 경우 `DataframeSource`,
 벡터인 경우 `VectorSource`를 사용하여 말뭉치(Corpus)로 변환하고, 이를 `TermDocumentMatrix` 함수에 넣어 
@@ -201,7 +210,7 @@ tw_wfm %>% arrange(desc(all)) %>% head(10)
 ```
 
 
-### 3.5. 빈도수 분석 및 시각화 {#nlp-twitter-tdm-barplot}
+## 빈도수 분석 및 시각화 {#nlp-twitter-tdm-barplot}
 
 단어문서행렬이 생성되면 이를 행렬로 변환하여 행방향으로 합을 구하면 단어빈도수가 계산되고,
 열방향으로 합을 구하면 문서빈도수가 계산된다. 단어 빈도수를 내림차순으로 계산하고 나서,
