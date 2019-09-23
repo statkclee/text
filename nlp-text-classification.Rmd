@@ -1,20 +1,99 @@
 ---
 layout: page
-title: xwMOOC 기계학습
-subtitle: 텍스트 분류(Text Classification) - 나이브 베이즈(naive bayes
+title: "xwMOOC 텍스트"
+subtitle: "텍스트 분류(Text Classification) - 나이브 베이즈(naive bayes)"
+author:
+    name: xwMOOC
+    url: https://www.facebook.com/groups/tidyverse/
+    affiliation: Tidyverse Korea
+date: "`r Sys.Date()`"
 output:
   html_document: 
     toc: yes
-    keep_md: yes
-  pdf_document:
-    latex_engine: xelatex
-mainfont: NanumGothic
+    toc_float: true
+    highlight: tango
+    code_folding: show
+    number_section: true
+    self_contained: true
+editor_options: 
+  chunk_output_type: console
 ---
- 
+
 ``` {r, include=FALSE}
 source("tools/chunk-options.R")
 knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
 
+options(scipen = 999)
+options(dplyr.width = 120)
+options(dplyr.print_max = 1e9)
+```
+
+# 텍스트 분류(Text classification) [^apac-machine-learning-summit]
+
+[^apac-machine-learning-summit]: [송치성, "Naïve or not", 바벨피쉬, APAC 머신러닝, 데이터 사이언스 커뮤니티 서밋](http://onoffmix.com/event/97444)
+
+분류기는 사전 분류될 집단이 정해진 경우 어떤 집단에 속할 것인지 판별하여 지정하는 역할 수행한다.
+텍스트 분류의 종류는 다음과 같은 것이 있다.
+
+- 주제(Topic): 텍스트가 무엇에 관한 것인가 분류.
+- 감정(Sentiment): 다양한 감정 상태 중 어떤 감정 상태에 가까운가 분류.
+- 언어(Language): 어느 나라, 어느 민족 텍스트인지 분류.
+- 쟝르(Genre): 텍스트가 어떤 쟝르(시, 소설, 등)에 속하는지 분류.
+- 저자(Author): 텍스트를 보고 누구의 글인지 판별.
+- ...
+
+# 베이즈 정리를 활용한 텍스트 분류기
+
+전자우편/채팅이 스팸일 확률을 찾고자 하는데 베이즈 정리로 출발해서, 
+단어가 하나인 경우를 경유하여 단어를 다수 포함한 전자우편/채팅으로 확장해 보자.
+
+## 베이즈 정리 
+
+특정 단어가 나오면 그 전자우편/채팅이 스팸일 확률을 베이즈 정리를 활용하면 다음과 같다.
+
+$$ P(s|w) = \frac {P(s,w)}{P(w)} = \frac {P(w|s)P(s)}{P(w)} $$
+
+여기서, $P(w):$ 전자우편이나 채팅에서 특정단어가 출현할 확률(예를 들어, Sell, 팔아요 등), $P(s)$는 전자우편이나 채팅이 스팸일 확률
+
+$$P(w) = P(w, s) + P(w, \sim s)$$
+
+## 단어 한개를 가정한 베이즈 정리
+
+상기 관계를 이용하여 단어가 주어졌을 때 스팸일 확률을 다음과 같이 정리할 수 있다.
+
+$$ P(s|w) = \frac {P(w|s)P(s)}{P(w)} = \frac {P(w|s)P(s)}{P(w, s) + P(w, \sim s)} = \frac {P(w|s)P(s)}{P(w|s)P(s) + P(w| \sim s)P(\sim s)}$$
+
+즉, 스팸중에서 특정 단어가 출현할 조건부 확률 $P(w|s)$ 과 스팸이 아닌 것 중에 특정 단어가 출현할 확률 $P(w|\sim s)$만 알게 된다면 
+단어가 주어졌을 때 스팸일 확률을 계산할 수 있게 된다.
+
+## 다수 단어를 가정한 베이즈 정리
+
+우선 다수 단어를 $W$라고 가정한다. 즉, $W = w_1 , w_2 , \cdots , w_n$ 라고 다수 단어를 표현한다.
+그리고, 각 단어가 서로 독립적이라는 가정을 넣으면 수식은 다음과 같이 단순화된다.
+
+$$\begin{aligned} 
+   P(s|W) &= \frac {P(W|s) P(s)}{P(W)} \\
+          &= P(w_1 , w_2 , \cdots , w_n |s) P(s) \\
+          &= P(w_1 |s)P(w_2 |s) \cdots P(w_n |s)
+\end{aligned}
+$$
+
+# SMS 단문문자 스팸 분류 [^nb-spam-classifier]
+
+[^nb-spam-classifier]: [Jesus M. Castagnetto (2015-01-03), SPAM/HAM SMS classification using caret and Naive Bayes](https://rpubs.com/jesuscastagnetto/caret-naive-bayes-spam-ham-sms)
+
+나이브 베이즈를 활용해서 SMS 단문문자 스팸 분류기 모형을 다음과 같이 개발할 수 있다.
+가장 먼저, 데이터는 국내에도 SMS 단문문자 스팸데이터가 있다면 공유되면 좋을텐데 아쉽게도 해외 
+Tiago A. Almeida, José Maria Gómez Hidalgo 분들이 생성한 `SMS Spam Collection v.1` 데이터를 활용한다.
+
+
+## 환경설정과 데이터 가져오기 
+
+[http://www.dt.fee.unicamp.br/~tiago/smsspamcollection/smsspamcollection.zip](http://www.dt.fee.unicamp.br/~tiago/smsspamcollection/smsspamcollection.zip) 
+웹사이트에서 직접 다운로드 해서 모형 개발 디렉토리 넣고 압축을 풀어 분석을 수행해도 된다.
+
+``` {r naive-bayes-spam-import} 
+# 0. 환경설정 -------------------------------------
 library(tidyverse)
 library(caret)
 library(tm)
@@ -32,93 +111,6 @@ library(gridExtra)
 library(FactoMineR)
 library(ggmosaic)
 
-options(scipen = 999)
-options(dplyr.width = 120)
-options(dplyr.print_max = 1e9)
-```
-
-## 1. 텍스트 분류(Text classification) [^apac-machine-learning-summit]
-
-[^apac-machine-learning-summit]: [송치성, "Naïve or not", 바벨피쉬, APAC 머신러닝, 데이터 사이언스 커뮤니티 서밋](http://onoffmix.com/event/97444)
-
-분류기는 사전 분류될 집단이 정해진 경우 어떤 집단에 속할 것인지 판별하여 지정하는 역할 수행한다.
-텍스트 분류의 종류는 다음과 같은 것이 있다.
-
-- 주제(Topic): 텍스트가 무엇에 관한 것인가 분류.
-- 감정(Sentiment): 다양한 감정 상태 중 어떤 감정 상태에 가까운가 분류.
-- 언어(Language): 어느 나라, 어느 민족 텍스트인지 분류.
-- 쟝르(Genre): 텍스트가 어떤 쟝르(시, 소설, 등)에 속하는지 분류.
-- 저자(Author): 텍스트를 보고 누구의 글인지 판별.
-- ...
-
-## 2. 베이즈 정리를 활용한 텍스트 분류기
-
-전자우편/채팅이 스팸일 확률을 찾고자 하는데 베이즈 정리로 출발해서, 
-단어가 하나인 경우를 경유하여 단어를 다수 포함한 전자우편/채팅으로 확장해 보자.
-
-### 2.1. 베이즈 정리 
-
-특정 단어가 나오면 그 전자우편/채팅이 스팸일 확률을 베이즈 정리를 활용하면 다음과 같다.
-
-$$ P(s|w) = \frac {P(s,w)}{P(w)} = \frac {P(w|s)P(s)}{P(w)} $$
-
-여기서, $P(w):$ 전자우편이나 채팅에서 특정단어가 출현할 확률(예를 들어, Sell, 팔아요 등), $P(s)$는 전자우편이나 채팅이 스팸일 확률
-
-$$P(w) = P(w, s) + P(w, \sim s)$$
-
-### 2.2. 단어 한개를 가정한 베이즈 정리
-
-상기 관계를 이용하여 단어가 주어졌을 때 스팸일 확률을 다음과 같이 정리할 수 있다.
-
-$$ P(s|w) = \frac {P(w|s)P(s)}{P(w)} = \frac {P(w|s)P(s)}{P(w, s) + P(w, \sim s)} = \frac {P(w|s)P(s)}{P(w|s)P(s) + P(w| \sim s)P(\sim s)}$$
-
-즉, 스팸중에서 특정 단어가 출현할 조건부 확률 $P(w|s)$ 과 스팸이 아닌 것 중에 특정 단어가 출현할 확률 $P(w|\sim s)$만 알게 된다면 
-단어가 주어졌을 때 스팸일 확률을 계산할 수 있게 된다.
-
-### 2.2. 다수 단어를 가정한 베이즈 정리
-
-우선 다수 단어를 $W$라고 가정한다. 즉, $W = w_1 , w_2 , \cdots , w_n$ 라고 다수 단어를 표현한다.
-그리고, 각 단어가 서로 독립적이라는 가정을 넣으면 수식은 다음과 같이 단순화된다.
-
-$$\begin{aligned} 
-   P(s|W) &= \frac {P(W|s) P(s)}{P(W)} \\
-          &= P(w_1 , w_2 , \cdots , w_n |s) P(s) \\
-          &= P(w_1 |s)P(w_2 |s) \cdots P(w_n |s)
-\end{aligned}
-$$
-
-## 3. SMS 단문문자 스팸 분류 [^nb-spam-classifier]
-
-[^nb-spam-classifier]: [Jesus M. Castagnetto (2015-01-03), SPAM/HAM SMS classification using caret and Naive Bayes](https://rpubs.com/jesuscastagnetto/caret-naive-bayes-spam-ham-sms)
-
-나이브 베이즈를 활용해서 SMS 단문문자 스팸 분류기 모형을 다음과 같이 개발할 수 있다.
-가장 먼저, 데이터는 국내에도 SMS 단문문자 스팸데이터가 있다면 공유되면 좋을텐데 아쉽게도 해외 
-Tiago A. Almeida, José Maria Gómez Hidalgo 분들이 생성한 `SMS Spam Collection v.1` 데이터를 활용한다.
-
-
-### 3.1. 환경설정과 데이터 가져오기 
-
-[http://www.dt.fee.unicamp.br/~tiago/smsspamcollection/smsspamcollection.zip](http://www.dt.fee.unicamp.br/~tiago/smsspamcollection/smsspamcollection.zip) 
-웹사이트에서 직접 다운로드 해서 모형 개발 디렉토리 넣고 압축을 풀어 분석을 수행해도 된다.
-
-``` {r naive-bayes-spam-import} 
-# 0. 환경설정 -------------------------------------
-# library(tidyverse)
-# library(caret)
-# library(tm)
-# library(extrafont)
-# loadfonts()
-# library(ggthemes)
-# library(doMC)
-# registerDoMC(cores=4)
-# library(forcats)
-# library(randomForest)
-# library(extrafont)
-# library(knitr)
-# library(gridExtra)
-# library(FactoMineR)
-# library(ggmosaic)
-
 
 # 1. 데이터 가져오기 -------------------------------------
 
@@ -132,7 +124,7 @@ sms_raw <- read_delim("data/SMSSpamCollection/SMSSpamCollection.txt", delim="\t"
 colnames(sms_raw) <- c("type", "text")
 ```
 
-### 3.2. 데이터 전처리
+## 데이터 전처리 {#naive-bayes-preprocessing}
 
 기본적으로 스팸이냐 아니냐는 `sms_raw$type` 변수에 저장되어 있다.
 즉, 스팸이냐 아니냐는 SMS 단문 메시지에 담긴 문자내용이 핵심인데, 
@@ -187,7 +179,7 @@ sms_train %>% tbl_df %>%
     DT::datatable()
 ```
 
-### 3.3. 나이브 베이즈 모형
+## 나이브 베이즈 모형 {#naive-bayes-model}
 
 `caret` 팩키지에 내장된 나이브베이즈 모형에 적합시키고 성능을 시각화한다.
 나이브베이즈 모형의 성능평가는 훈련데이터가 아니라 검증데이터를 활용하여 성능을 평가한다.
@@ -228,7 +220,7 @@ sms_nb_prob %>%
 
 ```
 
-## 4. 유방암 발병 예측 [^navie-bayes-breast-cancer]
+# 유방암 발병 예측 [^navie-bayes-breast-cancer] {#naive-bayes-predict}
 
 [^navie-bayes-breast-cancer]: [Naive Bayes Classification in R (Part 2)](https://sw23993.wordpress.com/2017/02/17/naive-bayes-classification-in-r-part-2/)
 
@@ -237,7 +229,7 @@ sms_nb_prob %>%
 UCI에 담당자에게 전자우편을 전달하면 2--3일 후 전달받을 수 있다.
 나이브 베이즈를 활용하여 유방암 발병예측하는데 좋은 데이터셋으로 전체 변수가 모두 범주형으로 되어 있다.
 
-### 4.1. 데이터 설명 
+## 데이터 설명 {#breast-data-dictionary}
 
 - class: 유방암 발병 여부
 - age: 연령대 20-29 ~ 70-79
@@ -250,7 +242,7 @@ UCI에 담당자에게 전자우편을 전달하면 2--3일 후 전달받을 수
 - breast.quad: 유방암이 발병한 지역 (유두를 중심으로 4분면)
 - irradiat: 환자가 방사선 치료를 받았는지 여부 
 
-### 4.1. 사전 준비 
+## 사전 준비 {#breast-setup}
 
 UCI 담당자에게서 전달받은 데이터를 불러와서, 
 데이터분석을 위해 변수명을 부여하고 문자형 데이터를 요인형 데이터로 변환시켜 `naiveBayes` 모형 적합시킬 준비를 한다.
@@ -275,7 +267,7 @@ breast_cancer <- breast_cancer %>%
 # glimpse(breast_cancer)    
 ```
 
-### 4.3. 유방암 발병 탐색적 데이터 분석
+## 유방암 발병 탐색적 데이터 분석 {#breast-EDA}
 
 유방암 발병과 관련하여 `breast_cancer` 데이터프레임에는 총 10개의 변수가 있고,
 결국 `class` 종속변수(유방암 발병 여부)를 나머지 범주형 9개 변수를 통해 예측하는 것이다.
@@ -379,7 +371,7 @@ bc_pred <- predict(bc_fit, breast_cancer, type="response")
 (conf_matrix <- table(bc_pred, breast_cancer$class))
 ```
 
-### 4.2. 나이브 베이즈 모형 적합
+## 나이브 베이즈 모형 적합 {#naive-bayes-fit}
 
 `e1071` 팩키지에 포함된 `naiveBayes` 모형을 활용하여 예측 모형을 생성한다.
 그리고, 오차행렬을 통해 전체 데이터에 대한 예측 정확도를 평가한다.
