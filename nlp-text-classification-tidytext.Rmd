@@ -95,6 +95,9 @@ Tiago A. Almeida, José Maria Gómez Hidalgo 분들이 생성한 `SMS Spam Colle
 ``` {r naive-bayes-spam-import} 
 # 0. 환경설정 -------------------------------------
 library(tidyverse)
+library(tm)
+library(tidytext)
+library(caret)
 
 sms_raw <- read_delim("data/SMSSpamCollection/SMSSpamCollection.txt", delim="\t", col_names = FALSE)
 colnames(sms_raw) <- c("type", "text")
