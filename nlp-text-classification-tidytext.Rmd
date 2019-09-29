@@ -95,12 +95,10 @@ Tiago A. Almeida, José Maria Gómez Hidalgo 분들이 생성한 `SMS Spam Colle
 ``` {r naive-bayes-spam-import} 
 # 0. 환경설정 -------------------------------------
 library(tidyverse)
-library(tm)
 library(tidytext)
 library(caret)
 
 sms_raw <- read_delim("data/SMSSpamCollection/SMSSpamCollection.txt", delim="\t", col_names = FALSE)
-colnames(sms_raw) <- c("type", "text")
 ```
 
 ## `tidytext` 데이터 전처리 {#naive-bayes-preprocessing}
@@ -109,92 +107,83 @@ colnames(sms_raw) <- c("type", "text")
 즉, 스팸이냐 아니냐는 SMS 단문 메시지에 담긴 문자내용이 핵심인데, 
 나이브 베이즈 모형에 넣도록 단어를 추출해서 이를 문선단어행렬(DocumentTermMatrix)로 변환시키는데 `tidytext` 팩키지를 사용해서 데이터를 정제하고, 기계학습 모형 적합을 위한 훈련/시험 데이터로 분할시킨다.
 
+이 전체 과정을 `tidytext` 작업흐름에 맞춰 코드를 작성한다.
+
+1. `mutate()` 함수로 스팸이냐 아니냐를 요인형으로 변환시킨다.
+1. 단문 SMS 텍스트를 소문자로 `str_to_lower()` 함수로 변환시킨다.
+1. `unnest_tokens()` 함수로 토큰화한다.
+1. 불용어(`stop_words`) 사전을 사용해서 불용어를 `anti_join()` 함수로 제거한다.
+1. 영단어를 위해서 `SnowballC` 팩키지 `wordStem()` 함수로 어간을 추출한다.
+ 
 ``` {r naive-bayes-spam-preprocessing}
 # 2. 데이터 전처리 -------------------------------------
-sms_raw$type <- factor(sms_raw$type)
+sms_tbl <- sms_raw %>% 
+  as_tibble() %>% 
+  set_names(c("type", "text")) %>% 
+    mutate(type = ifelse(type=="spam", 1, 0) %>% as.factor) %>% 
+    mutate(sms_id = row_number())
 
-sms_corpus <- Corpus(VectorSource(sms_raw$text))
-sms_corpus_clean <- sms_corpus %>%
-    tm_map(content_transformer(tolower)) %>% 
-    tm_map(removeNumbers) %>%
-    tm_map(removeWords, stopwords(kind="en")) %>%
-    tm_map(removePunctuation) %>%
-    tm_map(stripWhitespace)
+sms_token <- sms_tbl %>% 
+  mutate(text = str_to_lower(text)) %>% 
+  unnest_tokens(input=text, output="word", token="words") %>% 
+  anti_join(stop_words) %>% 
+  mutate(word = SnowballC::wordStem(word))
+```
 
-sms_dtm <- DocumentTermMatrix(sms_corpus_clean)
+## `tidytext` DTM 생성 [^tidy-cast] {#naive-bayes-dtm}
 
-# 3. 기계학습 모형 -------------------------------------
-## 3.1. 훈련/검증 데이터 -------------------------------
-train_index <- createDataPartition(sms_raw$type, p=0.75, list=FALSE)
-# 훈련/검증 데이터
-sms_raw_train <- sms_raw[train_index,]
-sms_raw_test <- sms_raw[-train_index,]
+[^tidy-cast]: [Julia Silge and David Robinson (2019-07-27), "Converting to and from Document-Term Matrix and Corpus objects"](https://cran.r-project.org/web/packages/tidytext/vignettes/tidying_casting.html)
 
-# 훈련/검증 텍스트 코퍼스
-sms_corpus_clean_train <- sms_corpus_clean[train_index]
-sms_corpus_clean_test <- sms_corpus_clean[-train_index]
+`caret` 예측모형 생성을 위해서 `basetable`을 만들어야 한다.
+이를 위해서 DTM(Document Term Matrix)를 생성한다. 이를 위해서 `cast_dtm()` 함수를 사용한다.
 
-# 훈련/검증 문서단어행렬
-sms_dtm_train <- sms_dtm[train_index,]
-sms_dtm_test <- sms_dtm[-train_index,]
+``` {r naive-bayes-spam-dtm}
+sms_dtm <- sms_token %>% 
+  count(sms_id, word) %>% 
+  cast_dtm(document=sms_id, term=word,
+           value =n, weighting = tm::weightTfIdf)
+sms_dtm
+```
 
-## 3.2. 모형설계행렬 -------------------------------
-sms_dict <- findFreqTerms(sms_dtm_train, lowfreq=5)
-sms_train <- DocumentTermMatrix(sms_corpus_clean_train, list(dictionary=sms_dict))
-sms_test <- DocumentTermMatrix(sms_corpus_clean_test, list(dictionary=sms_dict))
+예측모형을 만들 때 `DTM` 크기가 중요하다. 이를 위해서 `removeSparseTerms()` 함수를 사용해서 파일 크기를 줄이는 방법을 살펴보자.
 
-convert_counts <- function(x) {
-    x <- ifelse(x > 0, 1, 0)
-    x <- factor(x, levels = c(0, 1), labels = c("Absent", "Present"))
+``` {r naive-bayes-spam-dtm-size}
+sparity_rates <- seq(0.9, 0.999, 0.01)
+dtm_size <- list()
+
+for(i in seq_along(sparity_rates)) {
+  dtm_size[[i]] <- tm::removeSparseTerms(sms_dtm, sparse = sparity_rates[i])
+  # cat(length(dtm_size[[i]]$dimnames$Terms), "\n")
+  # cat(dtm_size[[i]]$dimnames$Docs, "\n")
 }
 
-sms_train <- sms_train %>% apply(MARGIN=2, FUN=convert_counts)
-sms_test <- sms_test %>% apply(MARGIN=2, FUN=convert_counts)
-
-sms_train %>% tbl_df %>% 
-    sample_n(100) %>% 
-    dplyr::select(1:10) %>% 
-    DT::datatable()
+sms_sparse_dtm <- tm::removeSparseTerms(sms_dtm, sparse = 0.99)
+sms_sparse_dtm
 ```
 
-## 나이브 베이즈 모형 {#naive-bayes-model}
+# 스팸분류 예측모형 [^julia-supervised] [^social-science-text] {#naive-bayes-dtm-classification}
 
-`caret` 팩키지에 내장된 나이브베이즈 모형에 적합시키고 성능을 시각화한다.
-나이브베이즈 모형의 성능평가는 훈련데이터가 아니라 검증데이터를 활용하여 성능을 평가한다.
-그리고, `ggplot`을 활용하여 스팸과 정상 SMS 확률을 시각화한다.
+[^julia-supervised]: [(RE)LAUNCHING MY SUPERVISED MACHINE LEARNING COURSE](https://juliasilge.com/blog/supervised-ml-course/)
 
-``` {r naive-bayes-spam-naive-bayes, eval=FALSE}
-## 3.3. 베이즈모형 적합 -------------------------------
-ctrl <- trainControl(method="cv", number=10, repeats=3)
-nb_grid <- data.frame(.fL=c(1), .usekernel=c(FALSE), .adjust=c(FALSE))
+[^social-science-text]: [Supervised classification with text data](https://cfss.uchicago.edu/notes/supervised-text-classification/)
 
-system.time(
-sms_nb_mod <- train(sms_train, sms_raw_train$type, 
-                    method="nb",
-                    tuneGrid = nb_grid,
-                    trControl=ctrl)
-)
-sms_nb_mod
+`DocumentTermMatrix` 객체를 7:3으로 훈련/시험 데이터로 나누고 `randomForest` 팩키지를 사용해서 "스팸/햄" 을 분류하는 스팸 분류예측모형을 텍스트 Feature만을 대상으로 개발한다.
 
-## 3.4. 베이즈모형 성능평가 -------------------------------
+``` {r naive-bayes-spam-classification}
+library(randomForest)
 
-sms_nb_pred <- predict(sms_nb_mod, sms_test)
-cm_nb <- confusionMatrix(sms_nb_pred, sms_raw_test$type, positive="spam")
-cm_nb
+# 훈련/시험 구분
+sample_size <- floor(0.7 * nrow(sms_sparse_dtm))
+train_ind <- sample(nrow(sms_sparse_dtm), size = sample_size)
 
-## 3.5. 베이즈 모형평가 시각화 -------------------------------
+sms_train <- sms_sparse_dtm[train_ind, ]
+sms_test <- sms_sparse_dtm[-train_ind, ]
 
-sms_nb_prob <- predict(sms_nb_mod, sms_test, type="prob")
+# Random Forest 예측모형
+sms_rfc <- randomForest(x = as.data.frame(as.matrix(sms_train)), 
+                    y = sms_tbl$type[train_ind])
 
-sms_nb_prob %>% 
-  gather(spam_ham, prob) %>% 
-  ggplot(., aes(x=prob)) +
-    geom_density(aes(color=spam_ham, fill=spam_ham, alpha=0.3)) +
-    theme_bw(base_family = "NanumGothic") +
-    scale_x_continuous(labels = scales::percent) +
-    labs(x="", y="밀도", title="단문문자 스팸 분류기 성능") +
-    theme(legend.position = "top") +
-    guides(alpha=FALSE)
-
+sms_rfc
 ```
+
 
