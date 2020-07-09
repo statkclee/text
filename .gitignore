@@ -18,3 +18,4 @@ data/hy_video_comment_list.rds
 data/sentiment140/
 data/training.1600000.processed.noemoticon.csv
 data/breast-cancer.zip
+.Rproj.user

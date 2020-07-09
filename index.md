@@ -68,4 +68,5 @@ title: 자연어 처리 - 텍스트
             1. [네이버 뉴스 - RmecabKo (형태소 분석)](nlp-naver-news-mecab.html)           
         1. [유트브 댓글](nlp-youtube-comment.html)
         1. [알릴레요 vs. 홍카콜라 - 댓글 분류](youtube-channel-comment-classification.html)
+1. [공정거래법 전면개편안](text-fair-law.html)        
  
