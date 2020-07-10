@@ -20,7 +20,7 @@ output:
     highlight: tango
     code_folding: show
     number_section: true
-    self_contained: no
+    self_contained: true
 bibliography: bibliography.bib
 csl: biomed-central.csl
 urlcolor: blue
@@ -98,7 +98,7 @@ curl -v -X POST "https://koreacentral.api.cognitive.microsoft.com/vision/v3.0/oc
 [`AzureVision`](https://github.com/Azure/AzureVision)를 사용하면 훨씬 수월하게 작업을 이어갈 수 있다. OCR작업은 `read_text()` 함수를 사용하면 된다.
 
 
-```{r azure-vision-package}
+```{r azure-vision-package, eval = FALSE}
 library(AzureVision)
 
 azure_vision_apikey <- Sys.getenv("AZURE_VISION_APIKEY")
@@ -125,7 +125,7 @@ toc_image %>% image_resize("200x")
 
 앞서 정의한 `azure_ocr` 설정에 맞춰 이번에는 한글을 인식할 예정이라 `language = "ko"`으로 설정하여 `read_text()`를 통해 OCR 작업을 수행한다.
 
-```{r fair-azure-one-page}
+```{r fair-azure-one-page, eval = FALSE}
 library(AzureCognitive)
 library(tidyverse)
 
@@ -162,27 +162,31 @@ fair_ocred_book %>%
 
 ## OCR 성능평가 {#fair-azure-api-all-page-evaluation}
 
-```{r ocr-evaluation-fair-law}
+OCR 성능평가를 위하여 원본 PDF 페이지와 Azure Computer Vision OCR 텍스트를 나란히 비교해보자.
 
+```{r ocr-evaluation-fair-law-listviewer}
 fair_ocred_book  <-  read_rds("data/ocr-fair-azure.rds")
+names(fair_ocred_book) <- list.files("fig/fair/")
 
-fair_azure_df <- fair_ocred_book %>% 
+listviewer::jsonedit(fair_ocred_book)
+
+fair_ocred_book_df <- fair_ocred_book %>% 
   enframe() %>% 
-  mutate(temp_text = map(value, unlist)) %>% 
-  mutate(text = map_chr(temp_text, paste0, collapse="")) %>% 
-  bind_cols(fair_pdf_df) %>% 
-  select(page, text)
+  mutate(tmp_text = map(value, unlist)) %>% 
+  mutate(text = map_chr(tmp_text, paste0, collapse = "\n")) %>% 
+  select(name, text)
 
-fair_azure_df
+```
 
+```{r ocr-evaluation-fair-law, eval = FALSE}
 save_ocr_text_png <- function(page) {
   ## 빈 도화지 + OCR된 텍스트
   white_png <- image_blank(550, 756, color = "white", pseudo_image = "", defines = NULL)
   annotated_png <- white_png %>% 
-    image_annotate(fair_azure_df$text[page], location = "+100+100", size = 12, font = "AppleGothic")
+    image_annotate(fair_ocred_book_df %>% filter(name ==page) %>% pull(text), location = "+50+100", size = 12, font = "AppleGothic")
   
   ## 원본 이미지
-  pdf_page <- glue::glue("fig/fair/fair_{page}.png")
+  pdf_page <- glue::glue("fig/fair/{page}")
   sample_png <- image_read(pdf_page)
   
   ## 결합
@@ -191,21 +195,30 @@ save_ocr_text_png <- function(page) {
   
   dir.create("fig/fair_ocr_azure", showWarnings = FALSE)
   
-  image_write(annotated_img, glue::glue("fig/fair_ocr_azure/fair_ocr_{page}.png"))
+  image_write(annotated_img, glue::glue("fig/fair_ocr_azure/azure_{page}"))
 }
 
+save_ocr_text_png("fair_15.png")
 
-fair_pdf_info <- pdf_info("data/fair_hearing.pdf")
+map(fair_ocred_book_df$name, save_ocr_text_png)
+```
 
-# map(1:fair_pdf_info$pages, save_ocr_text_png)
+마무리 작업을 수행한다.
 
-## 빈 도화지 + OCR된 텍스트
+```{r slickR-azure-ocr}
+library(slickR)
 
+fair_ocr_azure_png <- list.files("fig/fair_ocr_azure/")
+fair_pdf_ocr_azure_df <- tibble(page = glue::glue("fig/fair_ocr_azure/{fair_ocr_azure_png}") )
+  
+bottom_opts <- settings(arrows = TRUE,
+                        slidesToShow = 3,
+                        slidesToScroll = 1,
+                        centerMode = TRUE, 
+                        focusOnSelect = TRUE,
+                        initialSlide = 0)
 
-white_png <- image_blank(550, 756, color = "white", pseudo_image = "", defines = NULL)
-annotated_png <- white_png %>% image_annotate("대한민국", size = 15, font = "AppleGothic")
-annotated_png
-
-
+slickR(fair_pdf_ocr_azure_df$page, height = 600) %synch% 
+  (slickR(fair_pdf_ocr_azure_df$page, height = 100) + bottom_opts)
 ```
 
