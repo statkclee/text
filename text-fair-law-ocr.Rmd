@@ -3,10 +3,10 @@ layout: page
 title: 자연어 처리 - 텍스트
 subtitle: "최고의 OCR 엔진: 구글, 네이버, Azure, `tesseract`"
 author:
-  - name: "[Tidyverse Korea](https://www.facebook.com/groups/tidyverse/)"
-    url: https://www.facebook.com/groups/tidyverse/
-    affiliation: Tidyverse Korea
-    affiliation_url: https://www.facebook.com/groups/tidyverse/
+  name: "[Tidyverse Korea](https://www.facebook.com/groups/tidyverse/)"
+  url: https://www.facebook.com/groups/tidyverse/
+  affiliation: Tidyverse Korea
+  affiliation_url: https://www.facebook.com/groups/tidyverse/
 date: "`r Sys.Date()`"
 output:
   html_document: 
@@ -20,7 +20,7 @@ output:
     highlight: tango
     code_folding: show
     number_section: true
-    self_contained: true
+    self_contained: no
 bibliography: bibliography.bib
 csl: biomed-central.csl
 urlcolor: blue
@@ -36,6 +36,7 @@ knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE,
 library(pdftools)
 library(tidyverse)
 library(magick)
+
 ```
 
 
@@ -67,9 +68,144 @@ fair_text %>%
   write_rds("data/ocred/fair_tesseract.rds")
 ```
 
-## Azure API {#azure-api}
+# Azure API {#azure-api}
 
-```{r azure-api}
+## OCR 대상 이미지 {#azure-api-download}
+
+먼저 OCR 대상 이미지, [338px-Atomist_quote_from_Democritus](https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/Atomist_quote_from_Democritus.png/338px-Atomist_quote_from_Democritus.png) 다운로드한다.  
+
+```{r azure-api-download}
+library(tidyverse)
+library(magick)
+
+download.file(url = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/Atomist_quote_from_Democritus.png/338px-Atomist_quote_from_Democritus.png", destfile = "fig/ocr-wiki-image.png", mode = 'wb')
+
+ocr_eng_img <- image_read("fig/ocr-wiki-image.png")
+
+ocr_eng_img
+```
+
+## `curl` 테스트 {#azure-api-curl}
+
+먼저 `curl` 명령어를 통해서 쉘에서 제대로 동작하는지 테스트한다.
+
+```{bash azure-api-curl, eval = FALSE}
+curl -v -X POST "https://koreacentral.api.cognitive.microsoft.com/vision/v3.0/ocr?language=en&detectOrientation=true" -H "Content-Type: application/json" -H "Ocp-Apim-Subscription-Key: {API-KEY}" -d "{\"url\":\"https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/Atomist_quote_from_Democritus.png/338px-Atomist_quote_from_Democritus.png\"}" | python -m json.tool > data/ocr_output.txt
+```
+
+## `AzureVision` 팩키지 {#azure-api-AzureVision}
+
+[`AzureVision`](https://github.com/Azure/AzureVision)를 사용하면 훨씬 수월하게 작업을 이어갈 수 있다. OCR작업은 `read_text()` 함수를 사용하면 된다.
+
+
+```{r azure-vision-package}
+library(AzureVision)
+
+azure_vision_apikey <- Sys.getenv("AZURE_VISION_APIKEY")
+
+azure_ocr <- computervision_endpoint(
+    url = "https://koreacentral.api.cognitive.microsoft.com/vision/v3.0/ocr",
+    key = azure_vision_apikey
+)
+
+read_text(azure_ocr, "fig/ocr-wiki-image.png", language = "en")
+```
+
+# 공정거래법 OCR {#fair-azure-api}
+
+## 11페이지 OCR {#fair-azure-api-onepage}
+
+한글문서는 처음이라 ... 이를 대상으로 OCR 작업을 수행시켜보자.
+
+```{r fair-azure-one-page-test}
+toc_image <- image_read("fig/fair/fair_3.png")
+
+toc_image %>% image_resize("200x")
+```
+
+앞서 정의한 `azure_ocr` 설정에 맞춰 이번에는 한글을 인식할 예정이라 `language = "ko"`으로 설정하여 `read_text()`를 통해 OCR 작업을 수행한다.
+
+```{r fair-azure-one-page}
+library(AzureCognitive)
+library(tidyverse)
+
+fair_png <- list.files("fig/fair")
+fair_pdf_df <- tibble(page = glue::glue("fig/fair/{fair_png}") )
+
+toc_ocred <- read_text(azure_ocr, fair_pdf_df$page[3], language = "ko")
+toc_ocred[[1]]
+```
+
+## 전체 페이지 OCR {#fair-azure-api-all-page}
+
+공정거래법 공정회 자료집 스캔된 페이지별로 Azure API를 통해 OCR 작업을 수행할 수 있도록 `ocr_fair_pdf_page()` 함수를 정의하고 `map()` 함수로 반복작업 수행한다.
+
+```{r fair-azure-all-page, eval = FALSE}
+# OCR 함수 정의
+ocr_fair_pdf_page <- function(page) {
+  ocred_text <- read_text(azure_ocr, page, language = "ko")
+  return(ocred_text)
+}
+
+# ocr_fair_pdf_page(fair_pdf_df$page[3])
+# Free Tier --> Paid Tier: 초당 1회 이상 호출하여 OCR 작업 수행할 때 필요!
+fair_ocred_book <- map(fair_pdf_df$page, ocr_fair_pdf_page)
+
+fair_ocred_book[[3]]
+# [[1]]
+# [1] "발 제"                 "공정거래법"            "전면개편안"           
+# [4] "어떻게 바길이 하나?"   "이염國 ″는규~소 소리"
+
+fair_ocred_book %>% 
+  write_rds("data/ocr-fair-azure.rds")
+```
+
+## OCR 성능평가 {#fair-azure-api-all-page-evaluation}
+
+```{r ocr-evaluation-fair-law}
+
+fair_ocred_book  <-  read_rds("data/ocr-fair-azure.rds")
+
+fair_azure_df <- fair_ocred_book %>% 
+  enframe() %>% 
+  mutate(temp_text = map(value, unlist)) %>% 
+  mutate(text = map_chr(temp_text, paste0, collapse="")) %>% 
+  bind_cols(fair_pdf_df) %>% 
+  select(page, text)
+
+fair_azure_df
+
+save_ocr_text_png <- function(page) {
+  ## 빈 도화지 + OCR된 텍스트
+  white_png <- image_blank(550, 756, color = "white", pseudo_image = "", defines = NULL)
+  annotated_png <- white_png %>% 
+    image_annotate(fair_azure_df$text[page], location = "+100+100", size = 12, font = "AppleGothic")
+  
+  ## 원본 이미지
+  pdf_page <- glue::glue("fig/fair/fair_{page}.png")
+  sample_png <- image_read(pdf_page)
+  
+  ## 결합
+  combined_img <- c(sample_png, annotated_png)
+  annotated_img <- image_append(combined_img, stack = FALSE)
+  
+  dir.create("fig/fair_ocr_azure", showWarnings = FALSE)
+  
+  image_write(annotated_img, glue::glue("fig/fair_ocr_azure/fair_ocr_{page}.png"))
+}
+
+
+fair_pdf_info <- pdf_info("data/fair_hearing.pdf")
+
+# map(1:fair_pdf_info$pages, save_ocr_text_png)
+
+## 빈 도화지 + OCR된 텍스트
+
+
+white_png <- image_blank(550, 756, color = "white", pseudo_image = "", defines = NULL)
+annotated_png <- white_png %>% image_annotate("대한민국", size = 15, font = "AppleGothic")
+annotated_png
+
 
 ```
 
