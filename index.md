@@ -72,5 +72,6 @@ title: 자연어 처리 - 텍스트
     1. [최고의 OCR 엔진](text-fair-law-ocr.html)
     1. [EDA 텍스트 마이닝](text-fair-law-tm.html)
     1. [워드 임베딩(Word Embedding)](text-fair-law-word-embedding.html)
+    1. [워드 임베딩(Word Embedding): 한국어](text-fair-law-word-embedding-korean.html)
     1. [기계독해(MRC)](text-fair-law-mrc.html)
  
