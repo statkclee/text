@@ -70,5 +70,7 @@ title: 자연어 처리 - 텍스트
         1. [알릴레요 vs. 홍카콜라 - 댓글 분류](youtube-channel-comment-classification.html)
 1. [공정거래법 전면개편안](text-fair-law.html)
     1. [최고의 OCR 엔진](text-fair-law-ocr.html)
-
+    1. [EDA 텍스트 마이닝](text-fair-law-tm.html)
+    1. [워드 임베딩(Word Embedding)](text-fair-law-word-embedding.html)
+    1. [기계독해(MRC)](text-fair-law-mrc.html)
  
