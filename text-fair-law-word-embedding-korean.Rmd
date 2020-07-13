@@ -20,7 +20,7 @@ output:
     highlight: tango
     code_folding: show
     number_section: true
-    self_contained: no
+    self_contained: true
 bibliography: bibliography.bib
 csl: biomed-central.csl
 urlcolor: blue
@@ -44,8 +44,10 @@ library(magick)
 
 [^why-word-embedding]: [Natasha Latysheva (Sep 10, 2019), "Why do we use word embeddings in NLP?", Towards Data Science](https://towardsdatascience.com/why-do-we-use-embeddings-in-nlp-2f20e1b632d2)
 
-# 
+## `King` - `Man` + `Woman` = `?` {#word-embeding-example}
 
+먼저 워드 임베딩(Word Embedding)의 가장 유명한 예제를 구현해보자.
+어떻게 해서 300차원 워드 임베딩 모형을 갖게 되면 다음 연산이 가능하다.
 
 ```{r word-embedding-king}
 library(tidyverse)
@@ -53,6 +55,68 @@ library(textdata)
 
 glove6b <- embedding_glove6b(dimensions = 100)
 
-glove6b
+king <- glove6b %>% 
+  filter(token == "king") %>% 
+  unlist() %>% 
+  as.numeric()
+
+man <- glove6b %>% 
+  filter(token == "man") %>% 
+  unlist() %>% 
+  as.numeric()
+
+woman <- glove6b %>% 
+  filter(token == "woman") %>% 
+  unlist() %>% 
+  as.numeric()
+
+what_vector <- king - man + woman
+what_matrix <- as.matrix(what_vector[2:101], nrow=1)
+
+glove_mat <- glove6b %>% 
+  data.matrix()
+
+glove_mat <- glove_mat[, 2:101]
+
+result_vec <-  glove_mat %*% what_matrix %>% 
+  as.vector(.)
+
+what_df <- tibble(token = glove6b$token, similarity = result_vec)
+
+what_df %>% 
+  arrange(desc(similarity)) %>% 
+  top_n(10, wt=similarity) %>% 
+  slice(2) %>% 
+  pull(token)
+```
+
+상기 결과를 일반화할 수 있는 즉, `King` - `Man` + `Woman` 관계를 단어를 치환해서 계산하는 함수를 작성해서 살펴보자. 관련된 다양한 관계에 대한 내용은 다음 [블로그](https://blog.acolyer.org/2016/04/21/the-amazing-power-of-word-vectors/)를 참조한다.
+
+```{r word-embedding-example-function}
+get_analogy <- function(king, man, woman) {
+  
+  king <- glove6b %>% filter(token == king) %>% unlist() %>% as.numeric()
+  man <- glove6b %>% filter(token == man) %>% unlist() %>% as.numeric()
+  woman <- glove6b %>% filter(token == woman) %>% unlist() %>% as.numeric()
+  
+  question_vec <- king - man + woman
+  question_mat <- as.matrix(question_vec[2:101], nrow=1)
+  
+  glove_mat <- glove6b %>% 
+    data.matrix() %>% 
+    .[, 2:101]
+  
+  answer_vec <-  glove_mat %*% question_mat %>% 
+    as.vector(.)
+  
+  answer_df <- tibble(token = glove6b$token, similarity = answer_vec)
+  
+  answer_df %>% 
+    arrange(desc(similarity)) %>% 
+    top_n(6, wt=similarity)
+}
+
+get_analogy("king", "man", "woman")
+get_analogy("big", "bigger", "small")
 ```
 
