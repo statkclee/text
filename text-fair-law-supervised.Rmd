@@ -1,0 +1,87 @@
+---
+layout: page
+title: "자연어 처리 - 텍스트"
+subtitle: "지도학습"
+author:
+  name: "[Tidyverse Korea](https://www.facebook.com/groups/tidyverse/)"
+  url: https://www.facebook.com/groups/tidyverse/
+  affiliation: Tidyverse Korea
+  affiliation_url: https://www.facebook.com/groups/tidyverse/
+date: "`r Sys.Date()`"
+output:
+  html_document: 
+    include:
+      after_body: footer.html
+      before_body: header.html
+    theme: journal
+    toc: yes
+    toc_depth: 2
+    toc_float: true
+    highlight: tango
+    code_folding: show
+    number_section: true
+    self_contained: true
+bibliography: bibliography.bib
+csl: biomed-central.csl
+urlcolor: blue
+linkcolor: blue
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE,
+                      comment="", digits = 3, tidy = FALSE, prompt = FALSE, fig.align = 'center')
+
+library(pdftools)
+library(tidyverse)
+library(magick)
+
+```
+
+
+# 기본기 [^supervised-learning-text] {#text-supervised}
+
+[^supervised-learning-text]: [EMIL HVITFELDT AND JULIA SILGE (2020-07-22), "Supervised Machine Learning for Text Analysis in R", https://smltar.com/](https://smltar.com/)
+
+언어학의 기본을 이해하는 것은 텍스트 데이터를 다루는데 큰 도움이 된다. 아래 내용은 언어학의 6개 하위 분야에 대한 개괄적인 소개를 담고 있다.
+
+```{r lingsubfields, echo=TRUE}
+library(tidyverse)
+library(knitr)
+tibble::tribble(
+  ~연구분야, ~설명,
+  "음성학(Phonetics)", "언어로 사람들이 사용하는 소리: Sounds that people use in language",
+  "음운론(Phonology)", "특정언어의 소리 체계: Systems of sounds in particular languages",
+  "형태론(Morphology)", "단어가 구성되는 방법: How words are formed",
+  "구문론(Syntax)", "문장이 단어로 구성되는 방법: How sentences are formed from words",
+  "의미론(Semantics)", "문장이 의미하는 뜻: What sentences mean",
+  "화용론(Pragmatics)", "맥락으로 언어가 사용되는 방법: How language is used in context"
+) %>%
+  kable(col.names = c("연구분야", "강조하는 부분"),
+        caption = "언어학의 세부분야: 단순하고 작은 구조부터 복잡하고 넓은 구조")
+```
+
+# 토큰화 {#text-tokenizatin}
+
+- [`corpus`: Text Corpus Analysis](https://cran.r-project.org/web/packages/corpus/index.html)
+- [`tokenizers`](https://github.com/ropensci/tokenizers): `ropensci`
+- [`text2vec`](http://text2vec.org/)
+- [`quanteda`](https://quanteda.io/)
+
+# 불용어 {#text-stopwords}
+
+토큰화 과정이 끝나다고 하면 그 다음으로 눈여겨볼 주제는 불용어(stopwords)다. 
+불용어는 의미없는 혹은 자연어 처리 업무에 기여가 작은 단어를 제거하여 유의미한 정보를 추출하는데 도움을 주는 한편, 컴퓨팅 효율을 높여 비용을 줄이는 작업으로 볼 수 있다. 
+
+따라서 `stopwords` 팩키지가 있고 어떻게 하면 불용어 사전을 잘 정의하고 이를 자연어 처리 업무에 적용하느냐가 중요한 점이 되지 않을까 싶다. 
+
+```{r text-stopwords}
+library(stopwords)
+length(stopwords(source = "smart"))
+length(stopwords(source = "snowball"))
+length(stopwords(source = "stopwords-iso"))
+```
+
+
+

@@ -75,4 +75,4 @@ title: 자연어 처리 - 텍스트
     1. [워드 임베딩(Word Embedding): 영어(`GloVe`)](text-fair-law-word-embedding-glove.html)
     1. [워드 임베딩(Word Embedding): 한국어](text-fair-law-word-embedding-korean.html)
     1. [기계독해(MRC): `RBERT`](text-fair-law-mrc.html)
- 
+    1. [지도학습](text-fair-law-supervised.html)
